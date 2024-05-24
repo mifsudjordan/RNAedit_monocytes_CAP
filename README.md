@@ -29,7 +29,7 @@ This script performs several tasks:
 - Sort and filter the aligned reads using Samtools.
 - Upload results to a Google Cloud Storage bucket.
 
-What it works: 
+How it works: 
 The script reads SRR numbers from srr_numbers.txt and stores them in an array.
 A processing loop performs the following for every SRR number:
 - Download the FASTQ file using fasterq-dump.
@@ -61,7 +61,6 @@ Modify the Google Cloud Storage bucket paths (gs://jorsthesisbucket/) as needed.
 
 Dependencies:
 
-- GATK
 - Fasterq-dump
 - FastQC
 - STAR
@@ -91,7 +90,59 @@ For each SRR number in the array:
 - Clean Up: Removes the local copy of the alignment directory.
 - Completion: Prints the total execution time.
 
-*to be continued*
+Dependencies:
+-gatk
+-gsutil (for Google Cloud Storage operations)
+
+### 3. 3_variant_calling.sh
+This script performs one main task:
+- Performs variant calling on the output of the previous script
+
+How it works:
+- Reads SRR numbers from srr_numbers_controls3.txt and stores them in an array.
+
+For each SRR number in the array:
+- Downloads folder containing output of previous script from a Google Cloud Storage bucket.
+- Runs HaplotypeCaller to output vcf files from the processed BAM files.
+- Clean Up: Removes intermediate files to save space.
+- Upload vcf directory back to the Google Cloud Storage bucket.
+- Clean Up: Removes the local copy of the alignment directory.
+- Completion: Prints the total execution time.
+
+Dependencies:
+-gatk
+-gsutil (for Google Cloud Storage operations)
+
+The following scripts were run locally after downloading all vcf output files from cloud storage.
+
+### 4. 4_variant_filtering_counter.sh
+
+This script performs several tasks:
+- Variant quality control
+- Variant filtration
+- Counts variants showing RNA editing patterns
+- Outputs new vcfs with filtered variants
+- Counts potential RNA editing variants
+- Outputs RNA editing counts results for every sample
+
+How it works:
+- Reads SRR numbers from srr_numbers_controls3.txt and stores them in an array.
+
+For each SRR number in the array:
+- The working directory name was amended as per sample file
+- gatk VariantFiltration marks each variant as PASS or not
+- gatk SelectVariants outputs vcf files with only PASSED variants
+- Counts total potential RNA edits
+- Counts potential A to I RNA edits
+- Counts potential C to U RNA edits
+- Counts A to I edits that match the REDI portal database v2.
+- Outputs all counts in a results file.
+
+Dependencies:
+- gatk
+- check_REDI.py (from the Custom Utilities directory)
+
+**to be continued*
 
 ## Custom Utilities
 The custom_utilities directory contains various helper scripts used by the main scripts or for small alterations to the output files. These include scripts for downloading data, finding specific variants, and generating statistical tables.
