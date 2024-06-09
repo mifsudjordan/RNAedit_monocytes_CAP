@@ -5,10 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b866ebb6-641e-4a10-b43e-77eb626981a5" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/RNAedit_monocytes_CAP.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/RNAedit_monocytes_CAP.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/6_intersect_processor2.py" beforeDir="false" afterPath="$PROJECT_DIR$/6_intersect_processor2.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/7_thesis_rscript_norm.R" beforeDir="false" afterPath="$PROJECT_DIR$/7_thesis_rscript_norm.R" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/7_thesis_rscript_strict.R" beforeDir="false" afterPath="$PROJECT_DIR$/7_thesis_rscript_strict.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Archived scripts/copy_AtoI.sh" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/copy_AtoI.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Archived scripts/density plots for variant filtering.R" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/density plots for variant filtering.R" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Archived scripts/intersect_output_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/intersect_output_processor.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Archived scripts/scrip_high_compute.sh" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/scrip_high_compute.sh" afterDir="false" />
@@ -16,9 +20,8 @@
       <change beforePath="$PROJECT_DIR$/Archived scripts/thesis_data_analysis.R" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/thesis_data_analysis.R" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Archived scripts/thesis_data_analysis2.R" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/thesis_data_analysis2.R" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Archived scripts/trial.sh" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/trial.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Archived scripts/variant_stats_processor.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/custom_utilities/CtoUcount_chr.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/CtoUcount_chr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/custom_utilities/CtoUcount_chr.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/variant_count_chr.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/custom_utilities/SRR_finder.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/SRR_finder.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/custom_utilities/files_left_to_process.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/files_left_to_process.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/custom_utilities/find_acuteonly_var.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/find_acuteonly_var.py" afterDir="false" />
@@ -26,6 +29,7 @@
       <change beforePath="$PROJECT_DIR$/custom_utilities/intersect_to_annovar.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/intersect_to_annovar.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/custom_utilities/script_haplo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/script_haplo.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/custom_utilities/trials2.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/trials2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/custom_utilities/variant_stats_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/variant_stats_processor.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/custom_utilities/vcf_stats_table.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/vcf_stats_table.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -66,11 +70,14 @@
       <option name="presentableId" value="Default" />
       <updated>1717962024023</updated>
       <workItem from="1717962032382" duration="93000" />
-      <workItem from="1717962718618" duration="666000" />
+      <workItem from="1717962718618" duration="1876000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/RNAedit_monocytes_CAP$CtoUcount_chr.coverage" NAME="CtoUcount_chr Coverage Results" MODIFIED="1717965015062" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/custom_utilities" />
   </component>
 </project>

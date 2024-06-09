@@ -2,26 +2,26 @@
 
 import os
 
-vcf_file_path = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\VCFs\\vcfs\\all_ctou_vcf_strict\\"
-output_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\VCFs\\vcfs\\all_ctou_vcf_strict\\CtoU_strict_count_chr.csv"
+vcf_file_path = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\VCFs\\vcfs\\all_atoi_strict\\"
+output_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\VCFs\\vcfs\\all_atoi_strict\\AtoI_strict_count_chr.csv"
 
 # creating the header with all the chromosomes
 chr = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
        "11", "12", "13", "14", "15", "16", "17", "18",
        "19", "20", "21", "22", "X", "Y", "MT"]
-header_prefix = "CtoU_chr"
+header_prefix = "AtoI_Chr"
 header = ''
 for item in chr:
     header = header + header_prefix + item + "\t"
 header = header[:-1]
 header = header + "\n"
-header = "Run" + "\t" + "total_ctou" + "\t" + header
+header = "Run" + "\t" + "total_atoi" + "\t" + header
 print(header)
 
 with open(output_file, "w") as output:
     output.write(header)
 
-file_suffix = "_CtoUstrict.vcf"
+file_suffix = "_AtoI_strict.vcf"
 
 for file in os.listdir(vcf_file_path):
     if file.endswith('.vcf'):

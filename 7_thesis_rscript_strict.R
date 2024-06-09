@@ -17,7 +17,7 @@ ensembl <- useEnsembl(biomart = "ENSEMBL_MART_ENSEMBL",
 
 
 # Get data
-thesis_data_strict <- read_csv("thesis_data_strict.csv")
+thesis_data_strict <- read_csv("thesis_data_strict2.csv")
 
 tdf <- as.data.frame(thesis_data_strict)
 
