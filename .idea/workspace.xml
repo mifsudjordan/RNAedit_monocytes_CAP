@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="b866ebb6-641e-4a10-b43e-77eb626981a5" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/6_intersect_processor2.py" beforeDir="false" afterPath="$PROJECT_DIR$/6_intersect_processor2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/7_thesis_rscript_norm.R" beforeDir="false" afterPath="$PROJECT_DIR$/7_thesis_rscript_norm.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/7_thesis_rscript_strict.R" beforeDir="false" afterPath="$PROJECT_DIR$/7_thesis_rscript_strict.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Archived scripts/copy_AtoI.sh" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/copy_AtoI.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Archived scripts/density plots for variant filtering.R" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/density plots for variant filtering.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Archived scripts/intersect_output_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/intersect_output_processor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Archived scripts/scrip_high_compute.sh" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/scrip_high_compute.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Archived scripts/script_high_mem.sh" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/script_high_mem.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Archived scripts/thesis_data_analysis.R" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/thesis_data_analysis.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Archived scripts/thesis_data_analysis2.R" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/thesis_data_analysis2.R" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Archived scripts/trial.sh" beforeDir="false" afterPath="$PROJECT_DIR$/Archived scripts/trial.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Archived scripts/variant_stats_processor.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/custom_utilities/CtoUcount_chr.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/CtoUcount_chr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/custom_utilities/SRR_finder.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/SRR_finder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/custom_utilities/files_left_to_process.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/files_left_to_process.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/custom_utilities/find_acuteonly_var.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/find_acuteonly_var.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/custom_utilities/find_common_variants.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/find_common_variants.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/custom_utilities/intersect_to_annovar.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/intersect_to_annovar.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/custom_utilities/script_haplo.sh" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/script_haplo.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/custom_utilities/trials2.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/trials2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/custom_utilities/vcf_stats_table.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/vcf_stats_table.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2hekeISUbe9UGW4conDspzD1EfG" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="b866ebb6-641e-4a10-b43e-77eb626981a5" name="Changes" comment="" />
+      <created>1717962024023</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1717962024023</updated>
+      <workItem from="1717962032382" duration="93000" />
+      <workItem from="1717962718618" duration="666000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

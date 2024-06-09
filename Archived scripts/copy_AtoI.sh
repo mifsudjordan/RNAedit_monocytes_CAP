@@ -5,8 +5,8 @@ SECONDS=0
 
 # File paths
 
-vcf_path="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/vcfs/recovery/vcf_"
-intersect_path="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/vcfs/recovery/intersect_atoi"
+vcf_path="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/vcfs/hosp_admis/vcf_"
+destination_path="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/vcfs/all_atoi_strict"
 
 
 # Initialize an array to store the SRR numbers
@@ -18,7 +18,7 @@ while IFS= read -r line; do
     if [ -n "$line" ]; then
         srr_numbers+=("$line")
     fi
-done < "/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/srr_numbers_rec.txt"
+done < "/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/srr_numbers_hosp.txt"
 
 for srr in "${srr_numbers[@]}"; do
 
@@ -26,16 +26,8 @@ for srr in "${srr_numbers[@]}"; do
 
     cd "$work_dir"
 
-    # compress
-    bgzip -c "$srr"_AtoI.vcf > "$srr"_AtoI.vcf.gz
-
-    # index
-    bcftools index "$srr"_AtoI.vcf.gz
-
     # transfer to common directory
-    cp "$srr"_AtoI.vcf $intersect_path
-    cp "$srr"_AtoI.vcf.gz $intersect_path
-    cp "$srr"_AtoI.vcf.gz.csi $intersect_path
+    cp "$srr"_AtoI_strict.vcf $destination_path
 
 done
 

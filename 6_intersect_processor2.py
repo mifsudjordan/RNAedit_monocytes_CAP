@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 time_points = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\timepoints.txt"
-sample_list = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\VCFs\\srr_numbers.txt"
 intersect_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\annovar_output\\intersect_ctou_ann.hg38_multianno.txt"
 output_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\annovar_output\\ctou_ann_stats_norm.csv"
 
