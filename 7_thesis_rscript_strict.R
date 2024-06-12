@@ -478,8 +478,10 @@ dunnTest(CtoU_chr12 ~ Time_point, data=tdf, method="bh")
 dunnTest(CtoU_chr1 ~ Time_point, data=tdf, method="bh")
 dunnTest(CtoU_chr3 ~ Time_point, data=tdf, method="bh")
 
+
 chr_atoi_long <- tdf %>%
-  select(Time_point, starts_with("AtoI_Ch")) %>% 
+  select(Time_point, starts_with("AtoI_Ch")) %>%
+  select(-ends_with("matches")) %>% 
   pivot_longer(cols = starts_with("AtoI_Ch"), names_to = "Chromosome", values_to = "Count")
 
 chr_ctou_long <- tdf %>%
@@ -490,9 +492,15 @@ chr_ctou_long <- tdf %>%
 # Columns to consider
 atoi_chr_col <- grep("^AtoI_Ch", names(tdf), value = TRUE)
 
+# remove those names that have "matches" ... a to i variants that 
+# only match the REDI portal database.
+not_ending_with_matches <- !grepl("matches$", atoi_chr_col)
+atoi_chr_col <- atoi_chr_col[not_ending_with_matches]
+
+
 # Initialize an empty data frame to store the results
 atoi_kw_results <- data.frame()
-atoi_kw_results
+
 # Loop over each chromosome column
 for (col in atoi_chr_col) {
   # Create the formula for the test
@@ -518,7 +526,9 @@ atoi_kw_results$Adjusted_P_Value <- p.adjust(atoi_kw_results$P_Value, method = "
 atoi_kw_results
 tdf$AtoI_Ch16matches
 
-kruskal.test(AtoI_Ch16matches ~ Time_point, data = tdf)
+#post-hoc analysis
+library(FSA)
+dunnTest(AtoI_Chr12 ~ Time_point, data=tdf, method="bh")
 
 # Finding the mean count of A to I or C to U variants on each chromosome
 # C to U
@@ -567,15 +577,18 @@ ggplot(mean_ctou,
 # A to I
 mean_atoi_recovery <- tdf %>% 
   filter(Time_point == "recovery") %>% 
-  select(starts_with("AtoI_Ch"))
+  select(starts_with("AtoI_Ch")) %>% 
+  select(-ends_with("matches"))
 
 mean_atoi_controls <- tdf %>% 
   filter(Time_point == "control") %>% 
-  select(starts_with("AtoI_Ch"))
+  select(starts_with("AtoI_Ch")) %>% 
+  select(-ends_with("matches"))
 
 mean_atoi_acute <- tdf %>% 
   filter(Time_point == "acute") %>% 
-  select(starts_with("AtoI_Ch"))
+  select(starts_with("AtoI_Ch")) %>% 
+  select(-ends_with("matches"))
 
 mean_a_rec <-colMeans(mean_atoi_recovery)
 mean_a_con <-colMeans(mean_atoi_controls)
@@ -945,21 +958,30 @@ rna_edit_genes_counts <- cbind(tdf, rna_edit_genes_counts)
 # Select only numeric variables
 numeric_rna_edit_genes <- rna_edit_genes_counts[sapply(rna_edit_genes_counts, is.numeric)]
 
-plot(numeric_rna_edit_genes$AtoI_ChYmatches, numeric_rna_edit_genes$IL_10)
 
 rna_edit_counts <- tdf %>%
-  select(starts_with("AtoI_Ch"), starts_with("CtoU_"), Time_point)
+  select(starts_with("AtoI_Ch"), starts_with("CtoU_"), Time_point) %>% 
+  select(-ends_with("matches"))
 rna_edit_counts$Time_point<-factor(rna_edit_counts$Time_point)
+str(rna_edit_counts)
 # Perform PCA
-pca <- prcomp(rna_edit_counts[,1:50], center = TRUE, scale. = TRUE)
-summary(pca)
+#counts per chromosome a to i all and c to u all
+pca_per_chrom <- prcomp(rna_edit_counts[,1:50], center = TRUE, scale. = TRUE)
+
+#counts per chromosome a to i all
+pca_per_chr_atoi <- prcomp(rna_edit_counts[,1:25], center = TRUE, scale. = TRUE)
+
+#counts per chromosome c to u all
+pca_per_chr_ctou <- prcomp(rna_edit_counts[,26:50], center = TRUE, scale. = TRUE)
+
+summary(pca_per_chrom)
 
 # Checking the loading scores to determine which
 # variables have the largest effect on where the
 # samples are plotted in the PCA plot
-loadings_pc1 <- round(pca$rotation[, 1], 2)
+loadings_pc1 <- round(pca_per_chrom$rotation[, 1], 2)
 loadings_pc1
-loadings_pc2 <- round(pca$rotation[, 2], 2)
+loadings_pc2 <- round(pca_per_chrom$rotation[, 2], 2)
 loadings_pc2
 # Variables with large negative loading scores will push samples to the
 # left of the graph. Variables with large positive scores will push
@@ -967,14 +989,18 @@ loadings_pc2
 
 
 # Create a dataframe for plotting
-plot_df <- data.frame(PC1 = pca_result$x[,1], PC2 = pca_result$x[,2], Group = rna_edit_genes$Time_point)
+plot_df <- data.frame(PC1 = pca_per_chrom$x[,1], PC2 = pca_per_chrom$x[,2], Group = tdf$Time_point)
 
 # Create the plot using ggplot2
+# Amend titles for each plot
 library(ggplot2)
 ggplot(plot_df, aes(x = PC1, y = PC2, color = Group)) +
   geom_point() +
   theme_minimal() +
-  labs(x = "PC1", y = "PC2", color = "Group", title = "PCA Plot")
+  labs(x = "PC1: 71% of variance", y = "PC2: 9% of variance", color = "Group", title = 
+      "PCA Plot of first two principal components:
+       RNA edits per chromosome")
+
 # biplot
 library(devtools)
 library(ggbiplot)
