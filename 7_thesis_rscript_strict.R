@@ -964,6 +964,7 @@ rna_edit_counts <- tdf %>%
   select(-ends_with("matches"))
 rna_edit_counts$Time_point<-factor(rna_edit_counts$Time_point)
 str(rna_edit_counts)
+
 # Perform PCA
 #counts per chromosome a to i all and c to u all
 pca_per_chrom <- prcomp(rna_edit_counts[,1:50], center = TRUE, scale. = TRUE)
@@ -993,7 +994,7 @@ plot_df <- data.frame(PC1 = pca_per_chrom$x[,1], PC2 = pca_per_chrom$x[,2], Grou
 
 # Create the plot using ggplot2
 # Amend titles for each plot
-library(ggplot2)
+
 ggplot(plot_df, aes(x = PC1, y = PC2, color = Group)) +
   geom_point() +
   theme_minimal() +
@@ -1005,21 +1006,45 @@ ggplot(plot_df, aes(x = PC1, y = PC2, color = Group)) +
 library(devtools)
 library(ggbiplot)
 
-# Get the loadings
-loadings <- pca$rotation
+loadings <- pca_per_chrom$rotation
 
-# Subset the loadings to include only the vectors I'm interested in
-selected_vectors <- c("CtoU_chr2", "AtoI_Ch2matches", "AtoI_Ch16matches")
-pca$rotation <- loadings[selected_vectors, ]
+# Subset the loadings to include only the vectors of interest
+selected_vectors <- c("CtoU_chr22", "CtoU_chr1", "AtoI_Chr22", "AtoI_Chr2", "AtoI_Chr8", "AtoI_Chr21")
 
-g <- ggbiplot(pca, obs.scale = 1, var.scale = 1,
+# Ensure the PCA object is correctly defined
+pca_subset <- pca_per_chrom
+pca_subset$rotation <- loadings[selected_vectors,]
+
+# Create a biplot
+g <- ggbiplot(pca_subset, obs.scale = 1, var.scale = 1,
               groups = rna_edit_counts$Time_point, ellipse = TRUE,
               circle = TRUE)
+
+# Customize the plot
 g <- g + scale_color_discrete(name = '')
 g <- g + theme(legend.direction = 'horizontal',
                legend.position = 'top')
 g
 
+# PCA of cytokines, A to I, C to U and RNA editing gene expression
+# total of 15 covariates
+cyto_edits_rnagenes<-numeric_rna_edit_genes %>% 
+  select("LPS_IL_10", "LPS_IL_1b", "LPS_IL_6",
+         "LPS_TNF_alpha","AtoI", "CtoU", starts_with("ENSG"))
+
+cyto_edits_rnagenes<-numeric_rna_edit_genes %>% 
+  select(-Participant)
+
+
+# removing records with no data  
+cyto_edits_rnagenes <- cyto_edits_rnagenes %>% na.omit()
+
+# adding the group variable
+groups_for_pca <- tdf$Time_point[!is.na(rowSums(cyto_edits_rnagenes))]
+
+str(cyto_edits_rnagenes)
+pca_cyto_edits_rnagenes <- prcomp(cyto_edits_rnagenes, center = TRUE, scale. = TRUE)
+summary(pca_cyto_edits_rnagenes)
 
 # Compute correlation matrix
 
