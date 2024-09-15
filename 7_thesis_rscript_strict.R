@@ -10,7 +10,10 @@ library(gplots)
 library(gtools)
 library(ggrepel)
 library(Hmisc)
+library(plotly)
+library(ggpubr)
 library(MASS) # load it only when needed
+
 ensembl <- useEnsembl(biomart = "ENSEMBL_MART_ENSEMBL", 
                       dataset = "hsapiens_gene_ensembl", 
                       host = "www.ensembl.org")
@@ -23,6 +26,7 @@ tdf <- as.data.frame(thesis_data_strict)
 
 #Descriptive statistics
 summary(tdf$AtoI_TOTALmatches)
+summary(tdf$AtoI)
 summary(tdf$CtoU)
 
 #Histograms to visualise distributions
@@ -36,25 +40,252 @@ ggplot(tdf, aes(x=CtoU)) +
 
 ggplot(tdf, aes(x=AtoI_TOTALmatches)) +
   geom_histogram(binwidth=80, color="black", fill="lightgreen") +
-  labs(x="Count of A to I edits", y="Frequency") +
+  labs(x="Count of A to I edits per sample", y="Frequency") +
   theme_minimal() +
   ggtitle("Histogram of counts of A to I edits")
 
-#Scatter plot to see correlation between atoi and ctou
-ggplot(tdf, aes(x = AtoI_TOTALmatches, y = CtoU)) +
-  geom_point(aes(color = Time_point)) +  # Color points by Time_point
-  geom_smooth(method = lm, se = FALSE, color = "black") +  # Add linear trend line
-  labs(title = "Correlation between A to I and C to U counts",
-       x = "A to I count",
-       y = "C to U count")
+ggplot(tdf, aes(x=AtoI)) +
+  geom_histogram(binwidth=200, color="black", fill="lightgreen") +
+  labs(x="Count of A-to-I edits per sample", y="Frequency") +
+  theme_dark() +
+  ggtitle("Histogram of counts of A-to-I edits")
 
-##Find the mean variant counts
+#trying facetwrap
+
+tdf_long <- tdf %>%
+  pivot_longer(cols = c(AtoI, CtoU), 
+               names_to = "Edit_Type", 
+               values_to = "Count")
+
+# Combined plot using facet_wrap and the dark theme
+ggplot(tdf_long, aes(x=Count)) +
+  geom_histogram(data = subset(tdf_long, Edit_Type == "AtoI"), 
+                 binwidth = 300, color = "black", fill = "lightgreen") +
+  geom_histogram(data = subset(tdf_long, Edit_Type == "CtoU"), 
+                 binwidth = 80, color = "black", fill = "lightblue") +
+  facet_wrap(~Edit_Type, scales = "free_x", 
+             labeller = as_labeller(c(AtoI = "A-to-I", CtoU = "C-to-U"))) +
+  labs(x = "Count of RNA edits per sample", y = "Frequency") +
+  ggtitle("Histograms of counts of RNA edits") +
+  theme_dark() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+#Scatter plot to see correlation between atoi and ctou
+cor_result <- cor.test(tdf$AtoI, tdf$CtoU, method = "spearman")
+
+cor_result
+# Extract the correlation coefficient and p-value
+spearman_corr <- round(cor_result$estimate, 2)
+p_value <- round(cor_result$p.value, 10)
+cor_result$p.value
+# Create the plot with the Spearman correlation coefficient and p-value
+# Create the scatter plot with one global regression line and Spearman correlation
+ggscatter(tdf, x = "AtoI", y = "CtoU", 
+          add = "reg.line", conf.int = TRUE,  # Global regression line with confidence interval
+          cor.coef = TRUE, cor.method = "spearman",  # Display Spearman correlation and p-value
+          xlab = "A-to-I count", ylab = "C-to-U count",
+          color = "Time_point",  # Color points by Time_point but use a global trendline
+          legend.title = "Group", add.params = list(color = "black")) +
+  geom_point(size = 3, alpha = 0.7, shape = 21, stroke = 0.5, aes(fill = as.factor(Time_point)), color = "black") +  # Black outline for points
+  ggtitle("Correlation of Counts of RNA Edits") +
+  theme_dark() +  # Apply dark theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),  # Adjust x-axis text
+        legend.position = "bottom")
+
+
+#Find the mean variant counts
 mean_var_counts <- tdf %>% 
-  select(Time_point, CtoU, AtoI_TOTALmatches) %>% 
+  select(Time_point, CtoU, AtoI) %>% 
   group_by(Time_point) %>% 
-  summarise("C to U" = mean(CtoU), "A to I" = mean(AtoI_TOTALmatches))
+  summarise("C to U" = mean(CtoU), "A to I" = mean(AtoI))
 
 mean_var_counts
+
+# Descriptive statistics of each group
+descriptive_ctou_acute <- tdf %>%
+  select(Time_point,CtoU) %>% 
+  filter(Time_point == "acute") %>% 
+  summary()
+
+descriptive_ctou_recovery <- tdf %>%
+  select(Time_point,CtoU) %>% 
+  filter(Time_point == "recovery") %>% 
+  summary()
+
+descriptive_ctou_control <- tdf %>%
+  select(Time_point,CtoU) %>% 
+  filter(Time_point == "control") %>% 
+  summary()
+
+
+descriptive_ctou_acute
+descriptive_ctou_recovery
+descriptive_ctou_control
+
+descriptive_ctou_acute <- tdf %>%
+  select(Time_point,CtoU) %>% 
+  filter(Time_point == "acute") %>%
+  pull(CtoU)
+
+descriptive_ctou_recovery <- tdf %>%
+  select(Time_point,CtoU) %>% 
+  filter(Time_point == "recovery") %>%
+  pull(CtoU)
+
+descriptive_ctou_control <- tdf %>%
+  select(Time_point,CtoU) %>% 
+  filter(Time_point == "control") %>%
+  pull(CtoU)
+
+hist(descriptive_ctou_acute$CtoU)
+hist(descriptive_ctou_recovery$CtoU)
+hist(descriptive_ctou_control$CtoU)
+
+descriptive_atoi_acute <- tdf %>%
+  select(Time_point,AtoI) %>% 
+  filter(Time_point == "acute") %>%
+  pull(AtoI)
+
+descriptive_atoi_recovery <- tdf %>%
+  select(Time_point,AtoI) %>% 
+  filter(Time_point == "recovery") %>%
+  pull(AtoI)
+
+descriptive_atoi_control <- tdf %>%
+  select(Time_point,AtoI) %>% 
+  filter(Time_point == "control") %>%
+  pull(AtoI)
+
+wilcox.test(descriptive_atoi_acute, descriptive_atoi_control) # not significant
+wilcox.test(descriptive_ctou_acute, descriptive_ctou_control) # not significant
+
+# negative binomial atoi control vs acute
+combined_data <- data.frame(
+  count = c(descriptive_atoi_acute, descriptive_atoi_control),
+  group = factor(c(rep("acute", length(descriptive_atoi_acute)), 
+                   rep("control", length(descriptive_atoi_control))))
+)
+
+combined_data$group <- relevel(combined_data$group, ref = "control")
+
+
+nb_model <- glm.nb(count ~ group, data = combined_data)
+
+
+# negative binomial atoi control vs recovery
+combined_data <- data.frame(
+  count = c(descriptive_atoi_recovery, descriptive_atoi_control),
+  group = factor(c(rep("recovery", length(descriptive_atoi_recovery)), 
+                   rep("control", length(descriptive_atoi_control))))
+)
+
+nb_model <- glm.nb(count ~ group, data = combined_data)
+
+# negative binomial ctou control vs acute
+combined_data <- data.frame(
+  count = c(descriptive_ctou_acute, descriptive_ctou_control),
+  group = factor(c(rep("acute", length(descriptive_ctou_acute)), 
+                   rep("control", length(descriptive_ctou_control))))
+)
+
+nb_model <- glm.nb(count ~ group, data = combined_data)
+
+
+# negative binomial ctou control vs recovery
+combined_data <- data.frame(
+  count = c(descriptive_ctou_recovery, descriptive_ctou_control),
+  group = factor(c(rep("recovery", length(descriptive_ctou_recovery)), 
+                   rep("control", length(descriptive_ctou_control))))
+)
+
+nb_model <- glm.nb(count ~ group, data = combined_data)
+
+# Print the model summary
+summary(nb_model)
+
+stat<-describe(descriptive_atoi_acute$AtoI)
+summary(descriptive_atoi_recovery$AtoI)
+summary(descriptive_atoi_control$AtoI)
+
+hist(descriptive_atoi_acute$AtoI)
+hist(descriptive_atoi_recovery$AtoI)
+hist(descriptive_atoi_control$AtoI)
+
+# trying to plot a 3d histogram
+
+fig <- plot_ly() %>%
+  # Acute group
+  add_trace(x = h1$mids, y = rep(1, length(h1$mids)), z = h1$counts,
+            type = 'scatter3d', mode = 'lines+markers',
+            marker = list(size = 5, color = 'red'),
+            line = list(color = 'red', width = 5),
+            name = 'Acute') %>%
+  # Recovery group
+  add_trace(x = h2$mids, y = rep(2, length(h2$mids)), z = h2$counts,
+            type = 'scatter3d', mode = 'lines+markers',
+            marker = list(size = 5, color = 'blue'),
+            line = list(color = 'blue', width = 5),
+            name = 'Recovery') %>%
+  # Control group
+  add_trace(x = h3$mids, y = rep(3, length(h3$mids)), z = h3$counts,
+            type = 'scatter3d', mode = 'lines+markers',
+            marker = list(size = 5, color = 'green'),
+            line = list(color = 'green', width = 5),
+            name = 'Control') %>%
+  layout(scene = list(
+    xaxis = list(title = 'RNA-editing Count (C-to-U)'),
+    yaxis = list(title = 'Group', tickvals = c(1, 2, 3), ticktext = c('Acute', 'Recovery', 'Control')),
+    zaxis = list(title = 'Count'),
+    camera = list(eye = list(x = 1.5, y = 1.5, z = 1.5))
+  ))
+
+fig
+
+# Create the 2D overlay of histograms
+data_combined <- rbind(
+  data.frame(CtoU = descriptive_ctou_control$CtoU, Group = 'Control'),
+  data.frame(CtoU = descriptive_ctou_recovery$CtoU, Group = 'Recovery'),
+  data.frame(CtoU = descriptive_ctou_acute$CtoU, Group = 'Acute')
+)
+
+data_combined$Group <- factor(data_combined$Group, levels = c('Control', 'Recovery', 'Acute'))
+
+# Create a single ggplot with faceting
+ggplot(data_combined, aes(x = CtoU)) +
+  geom_histogram(aes(fill = Group), color = "black", alpha = 0.6, bins = 30) +
+  scale_fill_manual(values = c('Control' = 'lightgreen', 'Recovery' = 'lightblue', 'Acute' = 'pink')) +
+  facet_wrap(~ Group, scales = 'free_y') +
+  labs(title = 'Histograms of C-to-U RNA-editing Counts by Group', 
+       x = 'Count of A-to-I editing sites', 
+       y = 'Count') +
+  theme_dark() +
+  theme(legend.position = 'none')
+
+# Same as above but A to I
+
+# Create the 2D overlay of histograms
+data_combined_atoi <- rbind(
+  data.frame(CtoU = descriptive_atoi_control$AtoI, Group = 'Control'),
+  data.frame(CtoU = descriptive_atoi_recovery$AtoI, Group = 'Recovery'),
+  data.frame(CtoU = descriptive_atoi_acute$AtoI, Group = 'Acute')
+)
+
+data_combined_atoi$Group <- factor(data_combined$Group, levels = c('Control', 'Recovery', 'Acute'))
+
+# Create a single ggplot with faceting
+ggplot(data_combined_atoi, aes(x = CtoU)) +
+  geom_histogram(aes(fill = Group), color = "black", alpha = 0.6, bins = 30) +
+  scale_fill_manual(values = c('Control' = 'lightgreen', 'Recovery' = 'lightblue', 'Acute' = 'pink')) +
+  facet_wrap(~ Group, scales = 'free_y') +
+  labs(title = 'Histograms of A-to-I RNA-editing Counts by Group', 
+       x = 'Count of A-to-I editing sites', 
+       y = 'Count') +
+  theme_dark() +
+  theme(legend.position = 'none')
+
+
+# Display the plot
+print(plot)
 
 # Reshape data to long format
 mean_var_counts_long <- pivot_longer(mean_var_counts, cols = c("C to U", "A to I"),
@@ -76,19 +307,10 @@ ggplot(tdf, aes(x = Time_point, y = CtoU, color = Time_point)) +
   geom_point(position = position_jitter(width = 0.1), size = 1) +
   labs(title = "Distribution of C to U edit counts",
        x = "Time point",
-       y = "count of C to U variants",
-       color = "Time point") +
+       y = "count of C-to-U variants",
+       color = "Group") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-
-ggplot(tdf, aes(x = Time_point, y = AtoI_TOTALmatches, color = Time_point)) +
-  geom_boxplot(width = 0.5, position = position_dodge(width = 0.75),
-               alpha = 0.7, outlier.shape = NA) +
-  geom_point(position = position_jitter(width = 0.1), size = 1) +
-  labs(title = "Distribution of known A to I edit counts",
-       x = "Time point",
-       y = "count of A to I variants", color = "Time point") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggplot(tdf, aes(x = Time_point, y = AtoI, color = Time_point)) +
   geom_boxplot(width = 0.5, position = position_dodge(width = 0.75),
@@ -98,6 +320,31 @@ ggplot(tdf, aes(x = Time_point, y = AtoI, color = Time_point)) +
        x = "Time point",
        y = "count of A to I variants", color = "Time point") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# facetwrap to combine them
+
+tdf_long <- tdf %>%
+  pivot_longer(cols = c(CtoU, AtoI),
+               names_to = "Edit_Type",
+               values_to = "Count")
+
+# Create the combined plot
+ggplot(tdf_long, aes(x = Time_point, y = Count, color = Time_point)) +
+  geom_boxplot(width = 0.5, position = position_dodge(width = 0.75),
+               alpha = 0.7, outlier.shape = NA, aes(fill = Time_point),
+               color = "black") +  # Set boxplot outline color to black
+  geom_point(position = position_jitter(width = 0.1), size = 1, color = "black") +
+  stat_summary(fun = median, geom = "crossbar", width = 0.5, color = "black", linewidth = 0.75) +  # Add black median lines
+  labs(title = "Distribution of Edit Counts",
+       x = "Group",
+       y = "Count of Variants") +
+  facet_wrap(~ Edit_Type, 
+             scales = "free_y",
+             labeller = labeller(Edit_Type = c(CtoU = "C-to-U", AtoI = "A-to-I"))) +
+  theme_dark() +  # Apply dark theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+
 
 ggplot(tdf, aes(x = Time_point, y = AtoIandCtoU, color = Time_point)) +
   geom_boxplot(width = 0.5, position = position_dodge(width = 0.75),
@@ -131,6 +378,12 @@ rnaedit_no_acute <- tdf %>%
 nb_test_result_no_acute <- glm.nb(AtoIandCtoU ~ Time_point, data = rnaedit_no_acute)
 summary(nb_test_result_no_acute)
 
+#Kruskal-wallis test
+kruskal.test(AtoI ~ Time_point, data = tdf)
+kruskal.test(CtoU ~ Time_point, data = tdf)
+
+
+
 # C to U and A to I count differences in controls, paired acute and paired rec
 paired_editcounts <- tdf %>% 
   select(Participant, Paired_single, Time_point, CtoU, AtoI_TOTALmatches, AtoIandCtoU, AtoI) %>% 
@@ -140,6 +393,18 @@ paired_editcounts <- tdf %>%
 paired_editcounts
 
 paired_editcounts$Participant <- as.factor(paired_editcounts$Participant)
+
+# negative binomial with mixed effects for paired data:
+
+library(glmmTMB)
+
+# Fit the negative binomial mixed-effects model
+nb_model <- glmmTMB(AtoI ~ Time_point + (1 | Participant), 
+                    data = paired_editcounts, 
+                    family = nbinom2)  # Use nbinom1 if appropriate for your dispersion
+
+# Print the model summary
+summary(nb_model)
 
 
 # Paired bar plots and box plots of paired Acute vs Recovery 
@@ -242,16 +507,42 @@ age_groups <- cut(tdf$age, breaks = c(-Inf, age_breaks, Inf),
 age_groups
 hist(tdf$age)
 
+ggplot(tdf, aes(x = age)) +
+  geom_histogram(binwidth = 5, fill = "steelblue", color = "black") +
+  labs(title = "Histogram of ages of study subjects",
+       x = "Age",
+       y = "Frequency") +
+  scale_y_continuous(breaks = seq(0, max(tdf$age), by = 5)) +  # Set y-axis breaks to increments of 5
+  scale_x_continuous(breaks = seq(min(tdf$age), max(tdf$age), by = 5)) +  # Set x-axis labels at 5-year intervals
+  theme_dark()
+
 # Count the number of individuals in each age group
 table(age_groups)
 table(tdf$age)
 
-ggplot(tdf, aes(x = age, y = CtoU, color = age)) +
-  geom_point() +
-  labs(title = "Scatter Plot of C to U by Age",
+# Scatter plot C to U vs Age
+ggplot(tdf, aes(x = age, y = CtoU, color = as.factor(Time_point))) +
+  geom_point(size = 3, alpha = 0.7, shape = 21, stroke = 0.5, color = "black", aes(fill = as.factor(Time_point))) +  # Black outline with filled color
+  labs(title = "Scatter Plot of C-to-U by Age",
        x = "Age",
-       y = "count of C to U variants") +
-  scale_color_gradient(low = "lightblue", high = "darkblue")
+       y = "Count of C-to-U Sites",
+       fill = "Group") +  # Update legend title
+  theme_dark() +  # Apply dark theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  # Adjust x-axis text for readability
+  scale_x_continuous(breaks = seq(min(tdf$age), max(tdf$age), by = 5)) +  # Label x-axis every 5 years
+  scale_y_continuous(breaks = seq(0, max(tdf$CtoU), by = 100))
+
+# Scatter plot A to I vs age
+ggplot(tdf, aes(x = age, y = AtoI, color = as.factor(Time_point))) +
+  geom_point(size = 3, alpha = 0.7, shape = 21, stroke = 0.5, color = "black", aes(fill = as.factor(Time_point))) +  # Black outline with filled color
+  labs(title = "Scatter Plot of A-to-I by Age",
+       x = "Age",
+       y = "Count of A-to-I Sites",
+       fill = "Group") +  # Update legend title
+  theme_dark() +  # Apply dark theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),  # Adjust x-axis text for readability
+        legend.position = "bottom") +  # Move legend to the bottom
+  scale_x_continuous(breaks = seq(min(tdf$age), max(tdf$age), by = 5))
 
 #boxplot everyone C to U vs age groups
 
@@ -343,11 +634,12 @@ combined_data_ctou <- rbind(CtoU_acute, CtoU_controls, CtoU_rec)
 ggplot(combined_data_ctou, aes(x = as.factor(age_group), y = CtoU, fill = as.factor(age_group))) +
   geom_boxplot() +
   facet_wrap(~ Group, scales = "free_y") +
-  labs(title = "Boxplot of C to U by Age Group",
+  labs(title = "Boxplot of C-to-U counts by Age Group",
        x = "Age Group",
-       y = "Count of C to U variants") + 
+       y = "Count of C-to-U edits") + 
   scale_x_discrete(labels = age_groups_names) +  # Set custom labels for x-axis
-  scale_fill_discrete(labels = age_groups_names,name = "Age ranges")
+  scale_fill_discrete(labels = age_groups_names,name = "Age ranges") +
+  theme_dark()
 
 ggplot(CtoU_acute, aes(x = age, y = CtoU, color = age)) +
   geom_point() +
@@ -458,7 +750,7 @@ for (col in ctou_chr_col) {
                                                        P_Value = p_value))
 }
 
-# Adjust the p-values using the Bonferroni method
+# Adjust the p-values using the BH method
 ctou_kw_results$Adjusted_P_Value <- p.adjust(ctou_kw_results$P_Value, method = "BH")
 
 # Print the results
@@ -567,12 +859,13 @@ mean_ctou <- mean_ctou[1:75,]
 ggplot(mean_ctou,
        aes(x = factor(chromosome, levels = mixedsort(unique(chromosome))),
            y = mean, fill = factor(group))) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Mean count of C to U Variants by Chromosome and Group",
+  geom_bar(stat = "identity", position = "dodge", colour = "black") +
+  labs(title = "Mean count of C-to-U edits by Chromosome and Group",
        x = "Chromosome",
        y = "Mean count", 
        fill = "Group") +
-  theme(axis.text.x = element_text(hjust = 1))
+  theme(axis.text.x = element_text(hjust = 1)) +
+  theme_dark()
 
 # A to I
 mean_atoi_recovery <- tdf %>% 
@@ -615,12 +908,13 @@ mean_atoi
 ggplot(mean_atoi,
        aes(x = factor(chromosome, levels = mixedsort(unique(chromosome))),
            y = mean, fill = factor(group))) +
-  geom_bar(stat = "identity", position = "dodge") +
-  labs(title = "Mean count of A to I Variants by Chromosome and Group",
+  geom_bar(stat = "identity", position = "dodge", colour = "black") +  # Add black outline
+  labs(title = "Mean count of A-to-I edits by Chromosome and Group",
        x = "Chromosome",
        y = "Mean count", 
        fill = "Group") +
-  theme(axis.text.x = element_text(hjust = 1))
+  theme(axis.text.x = element_text(hjust = 1)) +
+  theme_dark()
 
 
 # Create a box plot with facets
@@ -632,6 +926,38 @@ ggplot(chr_ctou_long, aes(x = as.factor(Time_point), y = Count, fill = as.factor
        y = "Count of C to U variants") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+# Reorder the Chromosome levels
+chr_ctou_long$Chromosome <- factor(chr_ctou_long$Chromosome, 
+                                   levels = c("CtoU_chr1", "CtoU_chr2", "CtoU_chr3", "CtoU_chr4", "CtoU_chr5", 
+                                              "CtoU_chr6", "CtoU_chr7", "CtoU_chr8", "CtoU_chr9", "CtoU_chr10", 
+                                              "CtoU_chr11", "CtoU_chr12", "CtoU_chr13", "CtoU_chr14", "CtoU_chr15", 
+                                              "CtoU_chr16", "CtoU_chr17", "CtoU_chr18", "CtoU_chr19", "CtoU_chr20", 
+                                              "CtoU_chr21", "CtoU_chr22", "CtoU_chrX", "CtoU_chrY", "CtoU_chrMT"))
+
+# Custom labels for each Chromosome
+facet_labels <- c("CtoU_chr1" = "Chr 1", "CtoU_chr2" = "Chr 2", "CtoU_chr3" = "Chr 3", 
+                  "CtoU_chr4" = "Chr 4", "CtoU_chr5" = "Chr 5", "CtoU_chr6" = "Chr 6",
+                  "CtoU_chr7" = "Chr 7", "CtoU_chr8" = "Chr 8", "CtoU_chr9" = "Chr 9",
+                  "CtoU_chr10" = "Chr 10", "CtoU_chr11" = "Chr 11", "CtoU_chr12" = "Chr 12",
+                  "CtoU_chr13" = "Chr 13", "CtoU_chr14" = "Chr 14", "CtoU_chr15" = "Chr 15",
+                  "CtoU_chr16" = "Chr 16", "CtoU_chr17" = "Chr 17", "CtoU_chr18" = "Chr 18",
+                  "CtoU_chr19" = "Chr 19", "CtoU_chr20" = "Chr 20", "CtoU_chr21" = "Chr 21",
+                  "CtoU_chr22" = "Chr 22", "CtoU_chrX" = "Chr X", "CtoU_chrY" = "Chr Y", "CtoU_chrMT" = "Chr MT")
+
+# Create the plot
+ggplot(chr_ctou_long, aes(x = as.factor(Time_point), y = Count, fill = as.factor(Time_point))) +
+  geom_boxplot() +
+  facet_wrap(~Chromosome, scales = "free_y", ncol = 5, 
+             labeller = as_labeller(facet_labels)) +  # Apply custom titles
+  labs(title = "Boxplot of C-to-U Counts by Chromosome and Group",
+       x = "Time Point",
+       y = "Count of C-to-U Variants",
+       fill = "Group") +  # Change legend title
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme_dark() +  # Apply dark theme
+  theme(legend.position = "bottom")
+
+
 ggplot(chr_atoi_long, aes(x = as.factor(Time_point), y = Count, fill = as.factor(Time_point))) +
   geom_boxplot() +
   facet_wrap(~Chromosome, scales = "free_y", ncol = 5) +
@@ -639,6 +965,38 @@ ggplot(chr_atoi_long, aes(x = as.factor(Time_point), y = Count, fill = as.factor
        x = "Time_point",
        y = "Count of A to I variants") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Reorder the Chromosome levels
+chr_atoi_long$Chromosome <- factor(chr_atoi_long$Chromosome, 
+                                   levels = c("AtoI_Chr1", "AtoI_Chr2", "AtoI_Chr3", "AtoI_Chr4", "AtoI_Chr5", 
+                                              "AtoI_Chr6", "AtoI_Chr7", "AtoI_Chr8", "AtoI_Chr9", "AtoI_Chr10", 
+                                              "AtoI_Chr11", "AtoI_Chr12", "AtoI_Chr13", "AtoI_Chr14", "AtoI_Chr15", 
+                                              "AtoI_Chr16", "AtoI_Chr17", "AtoI_Chr18", "AtoI_Chr19", "AtoI_Chr20", 
+                                              "AtoI_Chr21", "AtoI_Chr22", "AtoI_ChrX", "AtoI_ChrY", "AtoI_ChrMT"))
+
+# Custom labels for each Chromosome
+facet_labels <- c("AtoI_Chr1" = "Chr 1", "AtoI_Chr2" = "Chr 2", "AtoI_Chr3" = "Chr 3", 
+                  "AtoI_Chr4" = "Chr 4", "AtoI_Chr5" = "Chr 5", "AtoI_Chr6" = "Chr 6",
+                  "AtoI_Chr7" = "Chr 7", "AtoI_Chr8" = "Chr 8", "AtoI_Chr9" = "Chr 9",
+                  "AtoI_Chr10" = "Chr 10", "AtoI_Chr11" = "Chr 11", "AtoI_Chr12" = "Chr 12",
+                  "AtoI_Chr13" = "Chr 13", "AtoI_Chr14" = "Chr 14", "AtoI_Chr15" = "Chr 15",
+                  "AtoI_Chr16" = "Chr 16", "AtoI_Chr17" = "Chr 17", "AtoI_Chr18" = "Chr 18",
+                  "AtoI_Chr19" = "Chr 19", "AtoI_Chr20" = "Chr 20", "AtoI_Chr21" = "Chr 21",
+                  "AtoI_Chr22" = "Chr 22", "AtoI_ChrX" = "Chr X", "AtoI_ChrY" = "Chr Y", "AtoI_ChrMT" = "Chr MT")
+
+# Create the plot
+ggplot(chr_atoi_long, aes(x = as.factor(Time_point), y = Count, fill = as.factor(Time_point))) +
+  geom_boxplot() +
+  facet_wrap(~Chromosome, scales = "free_y", ncol = 5, 
+             labeller = as_labeller(facet_labels)) +  # Apply custom titles
+  labs(title = "Boxplot of A-to-I Counts by Chromosome and Time Point",
+       x = "Time Point",
+       y = "Count of A-to-I Variants",
+       fill = "Time Point") +  # Change legend title
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme_dark()+  # Apply dark theme
+  theme(legend.position = "bottom")
+
 
 
 # Common C to U variant count on each chromosome in the groups:
@@ -1015,17 +1373,17 @@ selected_vectors <- c("CtoU_chr22", "CtoU_chr1", "AtoI_Chr22", "AtoI_Chr2", "Ato
 pca_subset <- pca_per_chrom
 pca_subset$rotation <- loadings[selected_vectors,]
 
-# Create a biplot
 g <- ggbiplot(pca_subset, obs.scale = 1, var.scale = 1,
               groups = rna_edit_counts$Time_point, ellipse = TRUE,
-              circle = TRUE)
+              circle = TRUE, var.axes = FALSE)
 
 # Customize the plot
 g <- g + scale_color_discrete(name = '')
 g <- g + theme(legend.direction = 'horizontal',
-               legend.position = 'top')
+               legend.position = 'top') +
+  
+  theme_dark()
 g
-
 # PCA of cytokines, A to I, C to U and RNA editing gene expression
 # total of 15 covariates
 cyto_edits_rnagenes<-numeric_rna_edit_genes %>% 

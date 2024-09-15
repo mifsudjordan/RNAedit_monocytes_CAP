@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-import sys
-intersect_file = sys.argv[1]
+#import sys
+#intersect_file = sys.argv[1]
 
-#intersect_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\intersect_atoi_norm.vcf"
+intersect_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\VCFs\\vcfs\\all_atoi_strict_compressed\\intersect_atoi_strict.vcf"
 
-output_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\intersect_annovar_atoi_norm.vcf"
+#output_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\VCFs\\vcfs\\all_ctou_strict_compressed\\intersect_annovar_ctou_strict.vcf"
+output_file = "/Users/jorsm/OneDrive/masters_thesis/VCFs/vcfs/all_atoi_strict_compressed/intersect_annovar_atoi_strict.vcf"
 
 with open(output_file, "w") as output:
     with open(intersect_file, "r") as intersect:
