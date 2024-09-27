@@ -9,6 +9,7 @@ This repository contains a set of scripts used for discovering RNA editing event
 - R
 - Required Python and R libraries (listed in individual scripts)
 - R studio
+- Other dependencies required by the individual scripts are listed below. 
 
 ## Pipeline Overview
 The pipeline consists of the following main steps:
