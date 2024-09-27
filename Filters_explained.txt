@@ -1,0 +1,127 @@
+# Commands to filter stuff
+
+# Filtering out indel and known polymorphic variants. A variation is polymorphic if the minor allele frequency is at least 0.01 and the minor allele is present in at least two samples in at least one population, the 1000 genomes project or some other databases. See http://ep.dbcls.jp/rdf/snp/VCF/00--README.txt under the heading common_all.vcf.gz
+
+gatk SelectVariants \
+	-V haplo_out_SRR12926209.vcf \
+	-ids . \
+	-select-type SNP \
+	-O SRR12926209_uncommon_snps.vcf
+
+
+# QC filtration:
+
+gatk VariantFiltration \
+	-R /mnt/c/Users/jorsm/OneDrive/masters_thesis/references_indexes/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa \
+	-V SRR12926209_uncommon_snps.vcf \
+	-filter "QD < 2.0" --filter-name "QD2" \
+    	-filter "QUAL < 30.0" --filter-name "QUAL30" \
+    	-filter "SOR > 3.0" --filter-name "SOR3" \
+    	-filter "FS > 60.0" --filter-name "FS60" \
+    	-filter "MQ < 40.0" --filter-name "MQ40" \
+    	-filter "MQRankSum < -12.5" --filter-name "MQRankSum-12.5" \
+    	-filter "ReadPosRankSum < -8.0" --filter-name "ReadPosRankSum-8" \
+	-O SRR12926209_uncommonsnps_qc.vcf
+
+# select only the passes...
+
+gatk SelectVariants \
+	-V SRR12926209_uncommonsnps_qc.vcf \
+	--exclude-filtered \
+	-O SRR12926209_uncommon_snps_passes.vcf
+
+
+# Selecting only A to I and C to U changes
+# CHECK for other variants.
+
+# A to I
+awk 'BEGIN {OFS="\t"} /^#/ {print; next} ($4 == "T" && $5 == "C") || ($4 == "A" && $5 == "G")' SRR12926209_uncommon_snps_passes.vcf > SRR12926209_AtoI.vcf
+
+# C to U
+awk 'BEGIN {OFS="\t"} /^#/ {print; next} ($4 == "G" && $5 == "T") || ($4 == "C" && $5 == "A")' SRR12926209_uncommon_snps_passes.vcf > SRR12926209_CtoU.vcf
+
+# A to I || C to U
+awk 'BEGIN {OFS="\t"} /^#/ {print; next} ($4 == "G" && $5 == "T") || ($4 == "C" && $5 == "A") || ($4 == "A" && $5 == "G") || ($4 == "T" && $5 == "C")' SRR12926209_uncommon_snps_passes.vcf > SRR12926209_allRNAedits.vcf
+
+# Annotation by gene
+annovar/table_annovar.pl SRR12926209_AtoI.vcf annovar/humandb/ -buildver hg38 -out annovar_output --thread 4 -remove -protocol refGene -operation g -nastring . -vcfinput -polish
+
+----------------------
+UNUSED:
+# Selecting only homozygous alt genotypes
+awk -F'\t' 'BEGIN {OFS = "\t"} /^#/ {print; next} $NF ~ /^1\/1:/ {print}' output_filtered.vcf > output_filtered2.vcf
+
+# Variant annotation using regtools:
+regtools variants annotate haplo_out_SRR12926209.vcf /mnt/c/Users/jorsm/OneDrive/masters_thesis/references_indexes/Homo_sapiens.GRCh38.110.gtf -o full_output_annotated.vcf
+----------------------
+
+# QD: This is the variant confidence (from the QUAL field) divided by the unfiltered depth of 
+# non-hom-ref samples. This annotation is intended to normalize the variant quality in order to 
+# avoid inflation caused when there is deep coverage.
+
+# QUAL: in the recomendations but not explained.
+
+# MQ: This is the root mean square mapping quality over all the reads at the site. Instead of the 
+# average mapping quality of the site, this annotation gives the square root of the average of the 
+# squares of the mapping qualities at the site. It is meant to include the standard deviation of the 
+# mapping qualities. Including the standard deviation allows us to include the variation in the  
+# dataset. A low standard deviation means the values are all close to the mean, whereas a high 
+# standard deviation means the values are all far from the mean. When the mapping qualities are good 
+# at a site, the MQ will be around 60.
+
+# MQRankSum: This is the u-based z-approximation from the Rank Sum Test for mapping qualities. It 
+# compares the mapping qualities of the reads supporting the reference allele and the alternate 
+# allele. A positive value means the mapping qualities of the reads supporting the alternate allele 
+# are higher than those supporting the reference allele; a negative value indicates the mapping 
+# qualities of the reference allele are higher than those supporting the alternate allele. A value 
+# close to zero is best and indicates little difference between the mapping qualities.
+
+# ReadPosRankSum: This is the u-based z-approximation from the Rank Sum Test for site position 
+# within reads. It compares whether the positions of the reference and alternate alleles are 
+# different within the reads. Seeing an allele only near the ends of reads is indicative of error, 
+# because that is where sequencers tend to make the most errors. A negative value indicates that 
+# the alternate allele is found at the ends of reads more often than the reference allele; a 
+# positive value indicates that the reference allele is found at the ends of reads more often than  
+# the alternate allele. A value close to zero is best because it indicates there is little 
+# difference between the positions of the reference and alternate alleles in the reads.
+
+------------ notes from https://gatk.broadinstitute.org/hc/en-us/articles/360035531692-VCF-Variant-Call-Format
+
+REF and ALT
+The reference allele and alternative allele(s) observed in a sample, set of samples, or a population in general (depending how the VCF was generated).
+
+Note that REF and ALT are always given on the forward strand. This means that the reference allele (REF) and alternate allele (ALT) are represented in the 5' to 3' direction of the reference genome's forward strand. 
+
+QUAL
+The Phred-scaled probability that a REF/ALT polymorphism exists at this site given sequencing data. Because the Phred scale is -10 * log(1-p), a value of 10 indicates a 1 in 10 chance of error, while a 100 indicates a 1 in 10^10 chance (see the Technical Documentation). These values can grow very large when a large amount of data is used for variant calling, so QUAL is not often a very useful property for evaluating the quality of a variant call. See our documentation on filtering variants for more information on this topic.
+
+GT
+The genotype of this sample at this site. For a diploid organism, the GT field indicates the two alleles carried by the sample, encoded by a 0 for the REF allele, 1 for the first ALT allele, 2 for the second ALT allele, etc. When there is a single ALT allele (by far the more common case), GT will be either:
+
+- 0/0 : the sample is homozygous reference
+- 0/1 : the sample is heterozygous, carrying 1 copy of each of the REF and ALT alleles
+- 1/1 : the sample is homozygous alternate
+
+AD and DP
+Allele depth (AD) and depth of coverage (DP). These are complementary fields that represent two important ways of thinking about the depth of the data for this sample at this site.
+
+AD is the unfiltered allele depth, i.e. the number of reads that support each of the reported alleles. All reads at the position (including reads that did not pass the variant caller’s filters) are included in this number, except reads that were considered uninformative. Reads are considered uninformative when they do not provide enough statistical evidence to support one allele over another.
+
+DP is the filtered depth, at the sample level. This gives you the number of filtered reads that support each of the reported alleles. You can check the variant caller’s documentation to see which filters are applied by default. Only reads that passed the variant caller’s filters are included in this number. However, unlike the AD calculation, uninformative reads are included in DP.
+
+See the Tool Documentation for more details on AD (DepthPerAlleleBySample) and DP (Coverage) for more details.
+
+PL
+"Normalized" Phred-scaled likelihoods of the possible genotypes. For the typical case of a monomorphic site (where there is only one ALT allele) in a diploid organism, the PL field will contain three numbers, corresponding to the three possible genotypes (0/0, 0/1, and 1/1). The PL values are "normalized" so that the PL of the most likely genotype (assigned in the GT field) is 0 in the Phred scale. We use "normalized" in quotes because these are not probabilities. We set the most likely genotype PL to 0 for easy reading purpose. The other values are scaled relative to this most likely genotype.
+
+Keep in mind, if you are not familiar with the statistical lingo, that when we say PL is the "Phred-scaled likelihood of the genotype", we mean it is "How much less likely that genotype is compared to the best one". Have a look at this article for an example of how PL is calculated.
+
+GQ
+The Genotype Quality represents the Phred-scaled confidence that the genotype assignment (GT) is correct, derived from the genotype PLs. Specifically, the GQ is the difference between the PL of the second most likely genotype, and the PL of the most likely genotype. As noted above, the values of the PLs are normalized so that the most likely PL is always 0, so the GQ ends up being equal to the second smallest PL, unless that PL is greater than 99. In GATK, the value of GQ is capped at 99 because larger values are not more informative, but they take more space in the file. So if the second most likely PL is greater than 99, we still assign a GQ of 99.
+
+Basically the GQ gives you the difference between the likelihoods of the two most likely genotypes. If it is low, you can tell there is not much confidence in the genotype, i.e. there was not enough evidence to confidently choose one genotype over another. See the FAQ article on the Phred scale to get a sense of what would be considered low.
+
+
+
+
+
