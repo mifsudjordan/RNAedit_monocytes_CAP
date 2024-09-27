@@ -12,6 +12,7 @@ library(ggrepel)
 library(Hmisc)
 library(plotly)
 library(ggpubr)
+library(lme4)
 library(MASS) # load it only when needed
 
 ensembl <- useEnsembl(biomart = "ENSEMBL_MART_ENSEMBL", 
@@ -70,6 +71,10 @@ ggplot(tdf_long, aes(x=Count)) +
   theme_dark() +
   theme(plot.title = element_text(hjust = 0.5))
 
+#Checking for normality and equality of variance of cytokine data
+shapiro.test(tdf$LPS_IL_10)
+
+
 #Scatter plot to see correlation between atoi and ctou
 cor_result <- cor.test(tdf$AtoI, tdf$CtoU, method = "spearman")
 
@@ -91,6 +96,8 @@ ggscatter(tdf, x = "AtoI", y = "CtoU",
   theme_dark() +  # Apply dark theme
   theme(axis.text.x = element_text(angle = 45, hjust = 1),  # Adjust x-axis text
         legend.position = "bottom")
+
+
 
 
 #Find the mean variant counts
@@ -170,7 +177,7 @@ combined_data$group <- relevel(combined_data$group, ref = "control")
 
 
 nb_model <- glm.nb(count ~ group, data = combined_data)
-
+summary(nb_model)
 
 # negative binomial atoi control vs recovery
 combined_data <- data.frame(
@@ -178,9 +185,9 @@ combined_data <- data.frame(
   group = factor(c(rep("recovery", length(descriptive_atoi_recovery)), 
                    rep("control", length(descriptive_atoi_control))))
 )
-
+combined_data
 nb_model <- glm.nb(count ~ group, data = combined_data)
-
+nb_model
 # negative binomial ctou control vs acute
 combined_data <- data.frame(
   count = c(descriptive_ctou_acute, descriptive_ctou_control),
@@ -189,7 +196,7 @@ combined_data <- data.frame(
 )
 
 nb_model <- glm.nb(count ~ group, data = combined_data)
-
+summary (nb_model)
 
 # negative binomial ctou control vs recovery
 combined_data <- data.frame(
@@ -364,18 +371,30 @@ qqnorm(tdf$AtoI_TOTALmatches)
 qqline(tdf$AtoI_TOTALmatches)
 
 
+# Convert log counts to counts
+acute_count <- exp(intercept)
+control_count <- exp(intercept + control_estimate)
+recovery_count <- exp(intercept + recovery_estimate)
+
+# Calculate percentage changes
+percentage_change_control <- ((acute_count - control_count) / acute_count) * 100
+percentage_change_recovery <- ((acute_count - recovery_count) / acute_count) * 100
+
+percentage_change_control
+percentage_change_recovery
+
 #Negative binomial test results
+tdf$Time_point <- factor(tdf$Time_point, levels = c("acute", "control", "recovery"))
 nb_test_result_CtoU <- glm.nb(CtoU ~ Time_point, data = tdf)
-nb_test_result_AtoI <- glm.nb(AtoI_TOTALmatches ~ Time_point, data = tdf)
 nb_test_result_AtoI <- glm.nb(AtoI ~ Time_point, data = tdf)
 summary(nb_test_result_CtoU)
 summary(nb_test_result_AtoI)
 
 rnaedit_no_acute <- tdf %>% 
-  select(AtoIandCtoU, Time_point) %>% 
+  select(AtoI, CtoU, Time_point) %>% 
   filter(Time_point != "acute")
 
-nb_test_result_no_acute <- glm.nb(AtoIandCtoU ~ Time_point, data = rnaedit_no_acute)
+nb_test_result_no_acute <- glm.nb(AtoI ~ Time_point, data = rnaedit_no_acute)
 summary(nb_test_result_no_acute)
 
 #Kruskal-wallis test
@@ -399,7 +418,7 @@ paired_editcounts$Participant <- as.factor(paired_editcounts$Participant)
 library(glmmTMB)
 
 # Fit the negative binomial mixed-effects model
-nb_model <- glmmTMB(AtoI ~ Time_point + (1 | Participant), 
+nb_model <- glmmTMB(CtoU ~ Time_point + (1 | Participant), 
                     data = paired_editcounts, 
                     family = nbinom2)  # Use nbinom1 if appropriate for your dispersion
 
@@ -489,12 +508,24 @@ CtoU_controls <- tdf %>%
   select(age, Time_point, CtoU) %>% 
   filter(Time_point == "control")
 
+AtoI_control <- tdf %>%
+  select(age, Time_point, AtoI) %>% 
+  filter(Time_point == "control")
+
 CtoU_acute <- tdf %>%
   select(age, Time_point, CtoU) %>%
   filter(Time_point == "acute")
 
+AtoI_acute <- tdf %>%
+  select(age, Time_point, AtoI) %>% 
+  filter(Time_point == "acute")
+
 CtoU_rec <- tdf %>% 
   select(age, Time_point, CtoU) %>%
+  filter(Time_point == "recovery")
+
+AtoI_recovery <- tdf %>%
+  select(age, Time_point, AtoI) %>% 
   filter(Time_point == "recovery")
 
 # Define the age breaks
@@ -570,7 +601,7 @@ ggplot(tdf, aes(x = as.factor(age_group), y = AtoI_TOTALmatches, fill = as.facto
   scale_fill_discrete(labels = age_groups_names,name = "Age ranges")
 
 
-ggplot(AtoI_acute, aes(x = as.factor(age_group), y = AtoI_TOTALmatches, fill = as.factor(age_group))) +
+ggplot(AtoI_acute, aes(x = as.factor(age_group), y = AtoI, fill = as.factor(age_group))) +
   geom_boxplot() +
   labs(title = "Boxplot of A to I by Age Group 
        in Acute sample",
@@ -591,7 +622,23 @@ CtoU_controls$age_group <- cut(CtoU_controls$age, breaks = seq(20, 100, by = 10)
 CtoU_rec$age_group <- cut(CtoU_rec$age, breaks = seq(20, 100, by = 10),
                           labels = FALSE)
 
-# Plotting scatter and box plots
+
+AtoI_acute$age_group <- cut(AtoI_acute$age, breaks = seq(20, 100, by = 10),
+                            labels = FALSE)
+
+AtoI_recovery$age_group <- cut(AtoI_recovery$age, breaks = seq(20, 100, by = 10),
+                            labels = FALSE)
+
+AtoI_control$age_group <- cut(AtoI_control$age, breaks = seq(20, 100, by = 10),
+                            labels = FALSE)
+
+CtoU_controls$age_group <- cut(CtoU_controls$age, breaks = seq(20, 100, by = 10),
+                               labels = FALSE)
+
+CtoU_rec$age_group <- cut(CtoU_rec$age, breaks = seq(20, 100, by = 10),
+                          labels = FALSE)
+
+# Plotting box plots
 
 ggplot(CtoU_acute, aes(x = as.factor(age_group), y = CtoU, fill = as.factor(age_group))) +
   geom_boxplot() +
@@ -599,6 +646,33 @@ ggplot(CtoU_acute, aes(x = as.factor(age_group), y = CtoU, fill = as.factor(age_
        in Acute samples",
        x = "Age Group",
        y = "Count of C to U variants")  + 
+  scale_x_discrete(labels = age_groups_names) +  # Set custom labels for x-axis
+  scale_fill_discrete(labels = age_groups_names,name = "Age ranges")
+
+ggplot(AtoI_acute, aes(x = as.factor(age_group), y = AtoI, fill = as.factor(age_group))) +
+  geom_boxplot() +
+  labs(title = "Boxplot of A to I by Age Group 
+       in Acute samples",
+       x = "Age Group",
+       y = "Count of A to I variants")  + 
+  scale_x_discrete(labels = age_groups_names) +  # Set custom labels for x-axis
+  scale_fill_discrete(labels = age_groups_names,name = "Age ranges")
+
+ggplot(AtoI_recovery, aes(x = as.factor(age_group), y = AtoI, fill = as.factor(age_group))) +
+  geom_boxplot() +
+  labs(title = "Boxplot of A to I by Age Group 
+       in recovery samples",
+       x = "Age Group",
+       y = "Count of A to I variants")  + 
+  scale_x_discrete(labels = age_groups_names) +  # Set custom labels for x-axis
+  scale_fill_discrete(labels = age_groups_names,name = "Age ranges")
+
+ggplot(AtoI_control, aes(x = as.factor(age_group), y = AtoI, fill = as.factor(age_group))) +
+  geom_boxplot() +
+  labs(title = "Boxplot of A to I by Age Group 
+       in control samples",
+       x = "Age Group",
+       y = "Count of A to I variants")  + 
   scale_x_discrete(labels = age_groups_names) +  # Set custom labels for x-axis
   scale_fill_discrete(labels = age_groups_names,name = "Age ranges")
 
@@ -654,6 +728,27 @@ summary(lm_ctoU_acute)
 
 CtoU_acute$age_group <- as.factor(CtoU_acute$age_group)
 
+# combining a to i vs age box plots
+
+AtoI_acute$Group <- "Acute"
+AtoI_recovery$Group <- "Recovery"
+AtoI_control$Group <- "Control"
+
+# Combine the datasets
+combined_data_atoi <- rbind(AtoI_acute, AtoI_recovery, AtoI_control)
+
+# Plot the combined data using facet_wrap
+ggplot(combined_data_atoi, aes(x = as.factor(age_group), y = AtoI, fill = as.factor(age_group))) +
+  geom_boxplot() +
+  facet_wrap(~ Group, scales = "free_y") +
+  labs(title = "Boxplot of A-to-I counts by Age Group",
+       x = "Age Group",
+       y = "Count of A-to-I edits") +
+  scale_x_discrete(labels = age_groups_names) +  # Set custom labels for x-axis
+  scale_fill_discrete(labels = age_groups_names, name = "Age ranges") +
+  theme_dark() +
+  theme(legend.position = "bottom")
+
 # Kruskal-Wallis test
 kruskal.test(CtoU ~ age, data = tdf)
 
@@ -668,12 +763,38 @@ ggplot(tdf, aes(x = as.factor(sex), y = CtoU)) +
        x = "Sex",
        y = "Count of C to U variants")
 
-ggplot(tdf, aes(x = as.factor(sex), y = AtoI_TOTALmatches)) +
+ggplot(tdf, aes(x = as.factor(sex), y = AtoI)) +
   geom_boxplot(outlier.shape = NA) +
   geom_point(aes(color = as.factor(Time_point)), position = position_jitter(width = 0.1), size = 2) +
   labs(title = "Boxplot of A to I by sex",
        x = "Sex",
        y = "Count of A to I variants")
+
+# combining the two plots
+
+tdf_long <- tdf %>%
+  pivot_longer(cols = c(AtoI, CtoU), 
+               names_to = "Edit_Type", 
+               values_to = "Count")
+
+# Reorder the levels of Edit_Type so A-to-I is on the left and C-to-U is on the right
+tdf_long$Edit_Type <- factor(tdf_long$Edit_Type, levels = c("AtoI", "CtoU"))
+
+
+# Generate the combined plot
+ggplot(tdf_long, aes(x = as.factor(sex), y = Count, fill = as.factor(sex))) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(aes(color = as.factor(Time_point)),
+             position = position_jitter(width = 0.1),
+             size = 2) +
+  facet_wrap(~ Edit_Type, scales = "free_y", labeller = as_labeller(c(AtoI = "A-to-I", CtoU = "C-to-U"))) +
+  scale_fill_manual(values = c("Male" = "steelblue", "Female" = "lightpink")) +  # Set custom colors for sexes
+  labs(title = "Boxplot of RNA edits by Sex",
+       x = "Sex",
+       y = "Count of Variants",
+       fill = "Sex", color = "Group") +
+  theme_dark() +
+  theme(legend.position = "bottom")
 
 #Negative binomial test results
 nb_test_result_CtoU_sex <- glm.nb(CtoU ~ sex, data = tdf)
@@ -683,11 +804,14 @@ summary(nb_test_result_AtoI_sex)
 
 # Mann-whitney U test
 wilcox.test(CtoU ~ sex, data = tdf)
-wilcox.test(AtoI_TOTALmatches ~ sex, data = tdf)
+wilcox.test(AtoI ~ sex, data = tdf)
 
 # COPD
 summary(as.factor(tdf$copd))
 table(tdf$Time_point, tdf$copd)
+
+edits_copd <- tdf %>% 
+  select(CtoU, AtoI, Time_point, copd)
 
 edits_acute_copd <- tdf %>%
   select(CtoU, AtoI_TOTALmatches, AtoI, Time_point, copd) %>% 
@@ -698,27 +822,37 @@ ggplot(edits_acute_copd, aes(x = as.factor(copd), y = CtoU)) +
   geom_point(position = position_jitter(width = 0.1), size = 2) +
   labs(title = "Boxplot of C to U by COPD in acute samples",
        x = "COPD",
-       y = "Count of C to U variants")
-
-wilcox.test(CtoU ~ copd, data = edits_acute_copd)
-
-ggplot(edits_acute_copd, aes(x = as.factor(copd), y = AtoI_TOTALmatches)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_point(position = position_jitter(width = 0.1), size = 2) +
-  labs(title = "Boxplot of A to I by COPD in acute samples",
-       x = "COPD",
-       y = "Count of A to I variants")
-
-wilcox.test(AtoI_TOTALmatches ~ copd, data = edits_acute_copd)
+       y = "Count of C-to-U variants")
 
 ggplot(edits_acute_copd, aes(x = as.factor(copd), y = AtoI)) +
   geom_boxplot(outlier.shape = NA) +
   geom_point(position = position_jitter(width = 0.1), size = 2) +
-  labs(title = "Boxplot of all A to I by COPD in acute samples",
+  labs(title = "Boxplot of A to I by COPD in acute samples",
        x = "COPD",
-       y = "Count of A to I variants")
+       y = "Count of A-to-I variants")
 
-wilcox.test(AtoI ~ copd, data = edits_acute_copd)
+# Combining the two plots
+edits_copd_long <- edits_copd %>%
+  pivot_longer(cols = c(CtoU, AtoI), 
+               names_to = "Edit_Type", 
+               values_to = "Count")
+
+# Plot the combined data
+ggplot(edits_copd_long, aes(x = as.factor(copd), y = Count)) +
+  geom_boxplot(aes(fill = as.factor(copd)), outlier.shape = NA) +  # Boxplot filled by COPD
+  geom_point(aes(color = as.factor(Time_point)), position = position_jitter(width = 0.1), size = 2, stroke = 0.5) +  # Points with black outline
+  facet_wrap(~ Edit_Type, scales = "free_y", labeller = as_labeller(c(CtoU = "C-to-U", AtoI = "A-to-I"))) +
+  #scale_fill_manual(values = c("0" = "steelblue", "1" = "lightpink")) +  # Custom colors for COPD
+  #scale_color_manual(values = c("0" = "steelblue", "1" = "lightpink")) +  # Custom colors for points
+  labs(title = "Boxplot of RNA Edits by COPD",
+       x = "COPD",
+       y = "Count of Edits",
+       fill = "COPD", color = "COPD") +
+  theme_dark() +
+  theme(legend.position = "bottom")
+
+wilcox.test(CtoU ~ copd, data = edits_copd)
+wilcox.test(AtoI ~ copd, data = edits_copd)
 
 # Kruskal tests for chromosomal analysis
 # C to U
@@ -1295,6 +1429,22 @@ ggplot(subset_res_recovery, aes(x = gene_name, y = log2FoldChange, fill = gene_n
        y = "log2FoldChange") +
   theme_minimal()
 
+# combining plots
+subset_res$Comparison <- "Acute vs Control"
+subset_res_recovery$Comparison <- "Acute vs Recovery"
+
+combined_res <- rbind(subset_res, subset_res_recovery)
+
+# Plot the combined data with facet_wrap
+ggplot(combined_res, aes(x = gene_name, y = log2FoldChange, fill = gene_name)) +
+  geom_bar(stat = "identity", position = "dodge", color = "black") +
+  facet_wrap(~ Comparison, scales = "free_x") +  # Side-by-side plots based on Comparison
+  labs(title = "Up-regulated RNA editing genes in acute samples",
+       x = "Gene Name",
+       y = "log2FoldChange") +
+  theme_dark() +
+  theme(legend.position = "right")
+
 # Extracting gene expression level of ENSG00000100298 (APOBEC3H)
 # in the three groups 
 
@@ -1315,7 +1465,6 @@ rna_edit_genes_counts <- cbind(tdf, rna_edit_genes_counts)
 
 # Select only numeric variables
 numeric_rna_edit_genes <- rna_edit_genes_counts[sapply(rna_edit_genes_counts, is.numeric)]
-
 
 rna_edit_counts <- tdf %>%
   select(starts_with("AtoI_Ch"), starts_with("CtoU_"), Time_point) %>% 
@@ -1408,25 +1557,104 @@ summary(pca_cyto_edits_rnagenes)
 
 cor_matrix_rna_edit <- cor(numeric_rna_edit_genes, method = "spearman", use = "pairwise.complete.obs")
 str(cor_matrix_rna_edit)
-write.table(cor_matrix_rna_edit, file = "cor_matrix_rna_edit_norm_acute.csv", sep = "\t", 
+write.table(cor_matrix_rna_edit, file = "cor_matrix_rna_edit_strict_acute.csv", sep = "\t", 
             row.names = TRUE, quote = FALSE, col.names = TRUE)
 str(numeric_rna_edit_genes)
 
 #checking significance level of certain correlations:
-rcorr(numeric_rna_edit_genes$LPS_IL_1b, numeric_rna_edit_genes$ENSG00000100298,
+rcorr(numeric_rna_edit_genes$LPS_IL_10, numeric_rna_edit_genes$AtoI_ChrMT,
       type = "spearman")
 
-#RNA editing genes vs LPS_IL_10
-
-plot(numeric_rna_edit_genes$ENSG00000197381, numeric_rna_edit_genes$LPS_IL_10)
-ggplot(numeric_rna_edit_genes, aes(x = ENSG00000197381, y = LPS_IL_10)) +
+ggplot(numeric_rna_edit_genes, aes(x = LPS_IL_10, y = AtoI_ChrMT)) +
   geom_point(aes(colour = factor(tdf$Time_point))) +
   geom_smooth(method = "lm", se = FALSE, color = "purple") +
   theme_minimal() +
-  labs(x = "ADARB1 normalised counts", y = "Il-10 secretion", 
-  title = "ADARB1 expression vs Il-10 secretion",
-       colour = "Group") +
-  scale_x_continuous(limits = c(0, 1000))
+  labs(x = "LPS_IL_10", y = "AtoI_ChrMT", 
+       title = "LPS_IL_10 vs AtoI_ChrMT",
+       colour = "Group")
+
+#RNA editing genes vs LPS_IL_10
+
+ggplot(numeric_rna_edit_genes, aes(x = ENSG00000160710, y = AtoI_Chr22)) +
+  geom_point(aes(fill = factor(tdf$Time_point)), shape = 21, size = 3, stroke = 0.5, color = "black", alpha = 0.7) +  # Black outline for points with group fill
+  geom_smooth(aes(colour = factor(tdf$Time_point)), method = "lm", se = FALSE) +  # Trendlines for each group with confidence interval
+  stat_cor(aes(color = factor(tdf$Time_point)), method = "spearman", label.x.npc = "centre", label.y.npc = "bottom") +  # Spearman correlation for each group
+  theme_dark() +
+  labs(x = "ADAR", y = "A-to-I Chr 22 RNA edit count", 
+       title = "ADAR normalised experssion vs A-to-I edit count Chromosome 22",
+       fill = "Group", colour = "Group") +
+  theme(legend.position = "bottom")
+
+ggplot(numeric_rna_edit_genes, aes(x = ENSG00000244509, y = CtoU_chr3)) +
+  geom_point(aes(fill = factor(tdf$Time_point)), shape = 21, size = 3, stroke = 0.5, color = "black", alpha = 0.7) +  # Black outline for points with group fill
+  geom_smooth(aes(colour = factor(tdf$Time_point)), method = "lm", se = FALSE) +  # Trendlines for each group with confidence interval
+  stat_cor(aes(color = factor(tdf$Time_point)), method = "spearman", label.x.npc = "left", label.y.npc = "top") +  # Spearman correlation for each group
+  theme_dark() +
+  labs(x = "APOBEC3C normalised expression", y = "C-to-U Chr 3 RNA edit count", 
+       title = "APOBEC3C gene experssion vs C-to-U edit count Chromosome 3",
+       fill = "Group", colour = "Group") +
+  theme(legend.position = "bottom")
+
+# Il-10 secretion across groups
+
+
+
+
+ggplot(numeric_rna_edit_genes, aes(x = LPS_IL_1b, y = AtoI_Ch16matches)) +
+  geom_point(aes(fill = factor(tdf$Time_point)), shape = 21, size = 3, stroke = 0.5, color = "black", alpha = 0.7) +  # Black outline for points with group fill
+  geom_smooth(aes(colour = factor(tdf$Time_point)), method = "lm", se = TRUE) +  # Trendlines for each group with confidence interval
+  stat_cor(aes(color = factor(tdf$Time_point)), method = "spearman", label.x.npc = "right", label.y.npc = "top") +  # Spearman correlation for each group
+  theme_minimal() +
+  labs(x = "LPS_IL_10", y = "ENSG00000197381", 
+       title = "LPS_IL_10 vs ENSG00000197381",
+       fill = "Group", colour = "Group") +
+  theme(legend.position = "bottom")
+
+ggplot(numeric_rna_edit_genes, aes(x = ENSG00000197381, y = LPS_IL_10)) +
+  geom_point(aes(fill = factor(tdf$Time_point)), shape = 21, size = 3, stroke = 0.5, color = "black") +  # Black outline for points with group fill
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  stat_cor(method = "spearman", label.x = 500, label.y = 4000) +  # Add Spearman's correlation
+  theme_dark() +
+  labs(x = "ADARB1 normalised counts", y = "Il-10 secretion (ng/L)", 
+       title = "ADARB1 expression vs Il-10 secretion",
+       fill = "Group") +
+  scale_x_continuous(limits = c(0, 1000)) +
+  theme(legend.position = "none")
+
+ggplot(numeric_rna_edit_genes, aes(x = ENSG00000128383, y = LPS_IL_10)) +
+  geom_point(aes(fill = factor(tdf$Time_point)), shape = 21, size = 3, stroke = 0.5, color = "black") +  # Black outline for points with group fill
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  stat_cor(method = "spearman", label.x = 7500, label.y = 2000) +  # Add Spearman's correlation
+  theme_dark() +
+  labs(x = "APOBEC3A normalised counts", y = "Il-10 secretion (ng/L)", 
+       title = "APOBEC3A expression vs Il-10 secretion",
+       fill = "Group") +
+  scale_x_continuous(limits = c(0, 15000)) +
+  theme(legend.position = "none")
+
+ggplot(numeric_rna_edit_genes, aes(x = ENSG00000244509, y = LPS_IL_10)) +
+  geom_point(aes(fill = factor(tdf$Time_point)), shape = 21, size = 3, stroke = 0.5, color = "black") +  # Black outline for points with group fill
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  stat_cor(method = "spearman", label.x = 3500, label.y = 2000) +  # Add Spearman's correlation
+  theme_dark() +
+  labs(x = "APOBEC3C normalised counts", y = "Il-10 secretion (ng/L)", 
+       title = "APOBEC3C expression vs Il-10 secretion",
+       fill = "Group") +
+  scale_x_continuous(limits = c(2000, 5000)) +
+  theme(legend.position = "none")
+
+ggplot(numeric_rna_edit_genes, aes(x = ENSG00000197381, y = LPS_IL_1b)) +
+  geom_point(aes(fill = factor(tdf$Time_point)), shape = 21, size = 3, stroke = 0.5, color = "black") +  # Black outline for points with group fill
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  stat_cor(method = "spearman", label.x = 600, label.y = 25000) +  # Add Spearman's correlation
+  theme_dark() +
+  labs(x = "ADARB1 normalised counts", y = "Il-1b secretion (ng/L)", 
+       title = "ADARB1 expression vs Il-1b secretion",
+       fill = "Group") +
+  theme(legend.position = "none")+
+  scale_x_continuous(limits = c(0, 1000))+
+  scale_y_continuous(limits = c(0, 40000))
+
 
 ggplot(numeric_rna_edit_genes, aes(x = ENSG00000128383, y = LPS_IL_10)) +
   geom_point(aes(colour = factor(tdf$Time_point))) +
@@ -1848,11 +2076,26 @@ ggplot(merged_df, aes(x = Time_point, y = log2(LPS_IFN_gamma), fill = Time_point
        x = "Condition",
        y = "log2 of delta LPS_IFN_gamma")
 
-ggplot(merged_df, aes(x = Time_point, y = LPS_IL_10, fill = Time_point)) +
+ggplot(tdf, aes(x = Time_point, y = (LPS_IL_10/1000), fill = Time_point)) +
   geom_boxplot() +
-  labs(title = "LPS_IL_10",
-       x = "Condition",
-       y = "delta LPS_IL_10")
+  labs(title = "       Delta IL-10 secretion with LPS vs 
+       control medium across groups",
+       x = "Group",
+       y = "delta Il-10 (ng/mL)") +
+  scale_y_continuous(limits = c(0, 4))+
+  theme_dark()+
+  theme(legend.position = "bottom")
+
+ggplot(tdf, aes(x = Time_point, y = (LPS_IL_1b/1000), fill = Time_point)) +
+  geom_boxplot() +
+  labs(title = "       Delta IL-1b secretion with LPS vs 
+       control medium across groups",
+       x = "Group",
+       y = "delta IL-1b (ng/mL)",
+       fill = "Groups") +  # Custom label for the legend
+  scale_y_continuous(limits = c(0, 30)) +  # Limit y-axis
+  theme_dark() +
+  theme(legend.position = "bottom")
 
 kruskal.test(LPS_IL_10 ~ Time_point, data = merged_df)
 dunn.test(merged_df$LPS_IL_10, merged_df$Time_point, method="bh")
@@ -2398,8 +2641,8 @@ autoplot(pca_ctou_cytokines, data = ctou_cytokines, colour = 'Time_point',
          alpha = 0.7, size = 2)
 
 # correlation between AtoI22 and ENSG00000160710 (ADAR gene)
-
-ggplot(rna_edit_genes_counts, aes(x = ENSG00000160710, y = AtoI_Ch22matches)) +
+numeric_rna_edit_genes$AtoI_Ch22matches
+ggplot(numeric_rna_edit_genes, aes(x = ENSG00000160710, y = AtoI_Ch22matches)) +
   geom_point(aes(color = Time_point)) +  # Color points by Time_point
   geom_smooth(method = lm, se = FALSE, color = "black") +  # Add linear trend line
   labs(title = "Correlation between A to I Chr 22 and ADAR gene expression",
@@ -2407,7 +2650,7 @@ ggplot(rna_edit_genes_counts, aes(x = ENSG00000160710, y = AtoI_Ch22matches)) +
        y = "A to I Chr 22 counts")
 
 rcorr(rna_edit_genes_counts$ENSG00000160710,
-      rna_edit_genes_counts$AtoI_Ch22matches, type = "spearman")
+      rna_edit_genes_counts$AtoI_Ch22, type = "spearman")
 
 
 ggplot(rna_edit_genes_counts, aes(x = ENSG00000197381, y = AtoI_Ch12matches)) +
@@ -2441,6 +2684,7 @@ numeric_tdf <- numeric_counts_tdf[, 2:73]
 merged_norm_tdf <- cbind(numeric_tdf, normalized_counts)
 merged_norm_tdf$Time_point <- tdf$Time_point
 
+rna_edit_genes_counts
 # Compute correlation
 global_cor_matrix <- cor(numeric_tdf, normalized_counts,
                          method = "spearman", use = "pairwise.complete.obs")
@@ -2488,6 +2732,26 @@ atoi_ann_stats_norm <- read_delim("annovar_output/atoi_ann_stats_norm2.csv",
 ctou_ann_stats_norm <- as.data.frame(ctou_ann_stats_norm)
 atoi_ann_stats_norm <- as.data.frame(atoi_ann_stats_norm)
 
+#strict filtration
+ctou_ann_stats_strict <- read_delim("annovar_output/ctou_ann_stats_strict.csv", 
+                                  delim = "\t", escape_double = FALSE, 
+                                  col_types = cols(Start = col_number(), End = col_number(), 
+                                                   perc_total = col_number(), perc_acute = col_number(), 
+                                                   perc_con = col_number(), perc_rec = col_number()), 
+                                  trim_ws = TRUE)
+
+atoi_ann_stats_strict <- read_delim("annovar_output/atoi_ann_stats_strict.csv", 
+                                  delim = "\t", escape_double = FALSE, 
+                                  col_types = cols(Start = col_number(), End = col_number(), 
+                                                   perc_total = col_number(), perc_acute = col_number(), 
+                                                   perc_con = col_number(), perc_rec = col_number()), 
+                                  trim_ws = TRUE)
+
+ctou_ann_stats_strict <- as.data.frame(ctou_ann_stats_strict)
+atoi_ann_stats_strict <- as.data.frame(atoi_ann_stats_strict)
+
+ctou_ann_stats_strict
+
 # creating unique_var_ids
 
 ctou_ann_stats_norm$unique_var_id <- paste(ctou_ann_stats_norm$Chr,
@@ -2505,44 +2769,84 @@ atoi_ann_stats_norm <- atoi_ann_stats_norm[, c("unique_var_id",
                                                setdiff(names(atoi_ann_stats_norm),
                                                        "unique_var_id"))]
 
+#-------------Chi square tests on strict edit list of C-to-U
+# c to u or a to i...just change name of datasets and results variable
+p_values_fisher <- numeric(nrow(ctou_ann_stats_strict))
 
-# Functions of variants
-# c to u
-ctou_func_count <- table(ctou_ann_stats_norm$Func.refGene)
-ctou_func_count <-as.data.frame(ctou_func_count)
-names(ctou_func_count) <- c("Variant_function", "Count")
+# Loop through each RNA edit and perform chi-square test
+for (i in 1:nrow(ctou_ann_stats_strict)) {
+  # Create a 2x2 contingency table for the current RNA edit
+  contingency_table <- matrix(c(
+    ctou_ann_stats_strict$a_count[i], ctou_ann_stats_strict$a_noncount[i],
+    ctou_ann_stats_strict$c_count[i], ctou_ann_stats_strict$c_noncount[i]
+  ), nrow = 2)
+  
+  # Perform chi-square test
+  test_result <- fisher.test(contingency_table)
+  
+  # Store the p-value
+  p_values_fisher[i] <- test_result$p.value
+}
 
+# Add p-values as the 7th column
+ctou_ann_stats_strict$p_value_fisher <- p_values_fisher
 
-my_palette <- c("#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF", 
-                "#800000", "#008000", "#000080", "#808000", "#800080", "#008080", 
-                "#C0C0C0", "#808080", "#000000")
+# Adjust the p-values using Benjamini-Hochberg (BH) correction
+ctou_ann_stats_strict$BH_adjusted_p_fisher <- p.adjust(p_values_fisher, method = "BH")
 
-ggplot(ctou_func_count, aes(x="", y=Count, fill=Variant_function)) +
-  geom_bar(width = 1, stat = "identity", color="black") +
-  coord_polar("y", start=0) + 
-  theme_void() +
-  theme(legend.position="bottom") +
-  labs(title = "C to U variant types", fill="Variant function") +
-  scale_fill_manual(values=my_palette)
+write.table(ctou_ann_stats_strict, file = "ctou_ann_stats_strict_p.csv", sep = "\t", 
+            row.names = FALSE, quote = FALSE, col.names = TRUE)
 
-# a to i
-atoi_func_count <- table(atoi_ann_stats_norm$Func.refGene)
-atoi_func_count <-as.data.frame(atoi_func_count)
-names(atoi_func_count) <- c("Variant_function", "Count")
+write.table(atoi_ann_stats_strict, file = "atoi_ann_stats_strict_p.csv", sep = "\t", 
+            row.names = FALSE, quote = FALSE, col.names = TRUE)
 
-ggplot(atoi_func_count, aes(x="", y=Count, fill=Variant_function)) +
-  geom_bar(width = 1, stat = "identity", color="black") +
-  coord_polar("y", start=0) + 
-  theme_void() +
-  theme(legend.position="bottom") +
-  labs(title = "A to I variant types", fill="Variant function") +
-  scale_fill_manual(values=my_palette)
+ctou_strict_volcano<-ctou_ann_stats_strict %>% 
+  select(Gene.refGene, log_adj_fisher, log_odds_ratio)
 
-ctou_func_count$Type <- "C to U"
-atoi_func_count$Type <- "A to I"
+atoi_strict_volcano<-atoi_ann_stats_strict %>% 
+  select(Gene.refGene, log_adj_fisher, log_odds_ratio)
 
-# Combine the dataframes
-combined_func_count <- rbind(ctou_func_count, atoi_func_count)
+write.table(ctou_strict_volcano, file = "ctou_strict_volcano.csv", sep = "\t", 
+            row.names = FALSE, quote = FALSE, col.names = TRUE)
+
+write.table(atoi_strict_volcano, file = "atoi_strict_volcano.csv", sep = "\t", 
+            row.names = FALSE, quote = FALSE, col.names = TRUE)
+
+# calculating the odds ratio:
+
+total_disease <- 69
+total_control <- 56
+
+# Initialize a vector to store log odds ratios with continuity correction
+log_odds_ratios <- numeric(nrow(atoi_ann_stats_strict))
+
+# Loop through each RNA edit and compute the log odds ratio with continuity correction
+for (i in 1:nrow(atoi_ann_stats_strict)) {
+  # Number of disease and control samples with and without the edit
+  X1 <- atoi_ann_stats_strict$a_count[i]
+  X2 <- atoi_ann_stats_strict$c_count[i]
+  
+  # Apply continuity correction by adding 0.5 to all values
+  X1 <- X1 + 0.5
+  X2 <- X2 + 0.5
+  no_edit_disease <- (total_disease - atoi_ann_stats_strict$a_count[i]) + 0.5
+  no_edit_control <- (total_control - atoi_ann_stats_strict$c_count[i]) + 0.5
+  
+  # Compute the odds in disease and control groups
+  odds_disease <- (X1 / no_edit_disease)
+  odds_control <- (X2 / no_edit_control)
+  
+  # Compute the log odds ratio
+  log_odds_ratios[i] <- log(odds_disease / odds_control)
+}
+
+# Add the log odds ratio as a new column in the dataframe
+atoi_ann_stats_strict$log_odds_ratio <- log_odds_ratios
+
+# add the -log10 of the p adjusted values
+atoi_ann_stats_strict$log_adj_fisher <- -log10(atoi_ann_stats_strict$BH_adjusted_p_fisher)
+ctou_ann_stats_strict$log_adj_fisher <- -log10(ctou_ann_stats_strict$BH_adjusted_p_fisher)
+
 
 #-------------Fisher's exact tests
 # c to u or a to i...just change name of datasets and results variable
@@ -2590,10 +2894,12 @@ ggplot(fishers_results, aes(x = log2(odds_ratio), y = -log10(p_adjust))) +
   theme_classic() +
   labs(x = "Log2 Odds Ratio", y = "-Log10 Adjusted P-Value", title = "Volcano Plot")
 
-#--- Checking relationship of those with this variant 2:37127009:
+#--- Checking relationship of those with this variant
 
-EIF2AK2_variant <- c('SRR12926202', 'SRR12926204', 'SRR12926208', 'SRR12926212', 'SRR12926214', 'SRR12926220', 'SRR12926224', 'SRR12926229', 'SRR12926239', 'SRR12926244', 'SRR12926246', 'SRR12926249', 'SRR12926255', 'SRR12926256', 'SRR12926262', 'SRR12926264', 'SRR12926266', 'SRR12926269', 'SRR12926276', 'SRR12926278', 'SRR12926280', 'SRR12926282', 'SRR12926283', 'SRR12926284', 'SRR12926285', 'SRR12926289', 'SRR12926291', 'SRR12926335', 'SRR12926337', 'SRR12926351', 'SRR12926354', 'SRR12926363', 'SRR12926365')
-FAM160B1_variant <-c('SRR12926216', 'SRR12926218', 'SRR12926266', 'SRR12926276', 'SRR12926365')
+EIF2AK2_variant <- c('SRR12926202', 'SRR12926233', 'SRR12926244', 'SRR12926251', 'SRR12926337', 'SRR12926339', 'SRR12926343', 'SRR12926351')
+MAVS_variant <-c('SRR12926202', 'SRR12926239', 'SRR12926251', 'SRR12926273', 'SRR12926282', 'SRR12926283', 'SRR12926337', 'SRR12926349', 'SRR12926354', 'SRR12926361')
+GNB4_variant<-c('SRR12926202', 'SRR12926207', 'SRR12926212', 'SRR12926218', 'SRR12926230', 'SRR12926235', 'SRR12926244', 'SRR12926246', 'SRR12926253', 'SRR12926282', 'SRR12926287', 'SRR12926289', 'SRR12926339', 'SRR12926345', 'SRR12926347', 'SRR12926361', 'SRR12926363', 'SRR12926365')
+
 
 # Box plots of cytokine release 
 # working with LPS data
@@ -2644,16 +2950,18 @@ boxplot(with_EIF2AK2_var$LPS_IL_10, without_EIF2AK2_var$LPS_IL_10,
 EIF2AK2_data <- data.frame(
   LPS_IL_10 = c(with_EIF2AK2_var$LPS_IL_10, without_EIF2AK2_var$LPS_IL_10, 
                 cytokines_recovery$LPS_IL_10, cytokines_controls$LPS_IL_10),
-  Group = factor(rep(c("Var", "!Var","Rec","Cont"), 
+  Group = factor(rep(c("EIF2AK2 edit", "acute","recovery","control"), 
                      times = c(length(with_EIF2AK2_var$LPS_IL_10), length(without_EIF2AK2_var$LPS_IL_10), 
                                length(cytokines_recovery$LPS_IL_10), length(cytokines_controls$LPS_IL_10))))
 )
 
-ggplot(EIF2AK2_data, aes(x = Group, y = LPS_IL_10, fill = Group)) +
-  geom_boxplot() +
-  labs(title = "Comparison of IL10 release with EIF2AK2 variant and the rest",
-       x = "Group", y = "delta LPS_IL_10") +
-  theme_minimal()
+ggplot(EIF2AK2_data, aes(x = Group, y = LPS_IL_10/1000, fill = Group)) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(title = "IL-10 release with EIF2AK2 edit",
+       x = "Group", y = "delta IL-10(ng/mL)") +
+  theme_dark() +
+  theme(legend.position = "none") +
+  scale_y_continuous(limits = c(0, 4))
 
 # Perform Kruskal-Wallis test
 kruskal.test(LPS_IL_10 ~ Group, data = EIF2AK2_data)
@@ -2661,64 +2969,119 @@ kruskal.test(LPS_IL_10 ~ Group, data = EIF2AK2_data)
 EIF2AK2_dunn_result <- dunn.test(EIF2AK2_data$LPS_IL_10, EIF2AK2_data$Group, method="bonferroni")
 
 # Acute Individuals with and without variants of interest
-# FAM160B1
+# MAVS
 
-FAM160B1_variant
-
-with_FAM160B1_var <- tdf %>%
+with_MAVS_variant <- tdf %>%
   select(Time_point, LPS_TNF_alpha, LPS_IL_1b, 
          LPS_IL_6, LPS_IL_10, Run) %>%
   filter(Time_point == "acute")
 
-with_FAM160B1_var <- with_FAM160B1_var[with_FAM160B1_var$Run %in% FAM160B1_variant, ]
+with_MAVS_variant <- with_MAVS_variant[with_MAVS_variant$Run %in% MAVS_variant, ]
 
-without_FAM160B1_var <- tdf %>%
+without_MAVS_var <- tdf %>%
   select(Time_point, LPS_TNF_alpha, LPS_IL_1b, 
          LPS_IL_6, LPS_IL_10, Run) %>%
   filter(Time_point == "acute")
 
-without_FAM160B1_var <- without_FAM160B1_var[!(without_FAM160B1_var$Run %in% FAM160B1_variant), ]
+without_MAVS_var <- without_MAVS_var[!(without_MAVS_var$Run %in% MAVS_variant), ]
 
-without_FAM160B1_var <- na.omit(without_FAM160B1_var)
-with_FAM160B1_var <- na.omit(with_FAM160B1_var)
+without_MAVS_var <- na.omit(without_MAVS_var)
+with_MAVS_variant <- na.omit(with_MAVS_variant)
 
-
-# Getting cytokine release data of the other groups as well
-
-cytokines_controls <- tdf %>%
-  select(Time_point, LPS_TNF_alpha, LPS_IL_1b, 
-         LPS_IL_6, LPS_IL_10) %>%
-  filter(Time_point == "control")
-cytokines_controls <- na.omit(cytokines_controls)
-
-cytokines_recovery <- tdf %>%
-  select(Time_point, LPS_TNF_alpha, LPS_IL_1b, 
-         LPS_IL_6, LPS_IL_10) %>%
-  filter(Time_point == "recovery")
-cytokines_recovery <- na.omit(cytokines_recovery)
-
-boxplot(with_FAM160B1_var$LPS_IL_6, without_FAM160B1_var$LPS_IL_6, 
-        cytokines_recovery$LPS_IL_6, cytokines_controls$LPS_IL_6,  
-        main = "Comparison of LPS_TNF_alpha release
-        with FAM160B1 variant and the rest", 
-        xlab = "Group", ylab = "delta LPS_TNF_alpha", 
-        names = c("Var", "!Var","Rec","Cont")) # IL-6
-with_FAM160B1_var
 # converting to a ggplot:
 
-EIF2AK2_data <- data.frame(
-  LPS_IL_10 = c(with_EIF2AK2_var$LPS_IL_10, without_EIF2AK2_var$LPS_IL_10, 
+MAVS_data <- data.frame(
+  LPS_IL_10 = c(with_MAVS_variant$LPS_IL_10, without_MAVS_var$LPS_IL_10, 
                 cytokines_recovery$LPS_IL_10, cytokines_controls$LPS_IL_10),
-  Group = factor(rep(c("Var", "!Var","Rec","Cont"), 
-                     times = c(length(with_EIF2AK2_var$LPS_IL_10), length(without_EIF2AK2_var$LPS_IL_10), 
+  Group = factor(rep(c("MAVS edit", "acute","recovery","control"), 
+                     times = c(length(with_MAVS_variant$LPS_IL_10), length(without_MAVS_var$LPS_IL_10), 
                                length(cytokines_recovery$LPS_IL_10), length(cytokines_controls$LPS_IL_10))))
 )
 
-ggplot(EIF2AK2_data, aes(x = Group, y = LPS_IL_10, fill = Group)) +
-  geom_boxplot() +
-  labs(title = "Comparison of IL10 release with EIF2AK2 variant and the rest",
-       x = "Group", y = "delta LPS_IL_10") +
-  theme_minimal()
+ggplot(MAVS_data, aes(x = Group, y = LPS_IL_10/1000, fill = Group)) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(title = "IL-10 release with MAVS edit",
+       x = "Group", y = "delta IL-10 (ng/mL)") +
+  theme_dark() +
+  scale_y_continuous(limits = c(0, 3.5)) +
+  theme(legend.position = "none")
+
+# Acute Individuals with and without variants of interest
+# GNB4
+
+with_GNB4_variant <- tdf %>%
+  select(Time_point, LPS_TNF_alpha, LPS_IL_1b, 
+         LPS_IL_6, LPS_IL_10, Run) %>%
+  filter(Time_point == "acute")
+
+with_GNB4_variant <- with_GNB4_variant[with_GNB4_variant$Run %in% GNB4_variant, ]
+
+without_GNB4_var <- tdf %>%
+  select(Time_point, LPS_TNF_alpha, LPS_IL_1b, 
+         LPS_IL_6, LPS_IL_10, Run) %>%
+  filter(Time_point == "acute")
+
+without_GNB4_var <- without_GNB4_var[!(without_GNB4_var$Run %in% GNB4_variant), ]
+
+without_GNB4_var <- na.omit(without_GNB4_var)
+with_GNB4_variant <- na.omit(with_GNB4_variant)
+
+# converting to a ggplot:
+
+GNB4_data <- data.frame(
+  LPS_IL_1b = c(with_GNB4_variant$LPS_IL_1b, without_GNB4_var$LPS_IL_1b, 
+                cytokines_recovery$LPS_IL_1b, cytokines_controls$LPS_IL_1b),
+  Group = factor(rep(c("GNB4 edit", "acute","recovery","control"), 
+                     times = c(length(with_GNB4_variant$LPS_IL_1b), length(without_GNB4_var$LPS_IL_1b), 
+                               length(cytokines_recovery$LPS_IL_1b), length(cytokines_controls$LPS_IL_1b))))
+)
+
+ggplot(GNB4_data, aes(x = Group, y = (LPS_IL_1b/1000), fill = Group)) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(title = "IL-1b release with GNB4 edit",
+       x = "Group", y = "delta IL-1b (ng/mL)") +
+  theme_dark() +
+  scale_y_continuous(limits = c(-3, 30)) +
+  theme(legend.position = 'none')
+
+# GPR65
+
+GPR65<-c('SRR12926202', 'SRR12926209', 'SRR12926220', 'SRR12926224', 'SRR12926225', 'SRR12926230', 'SRR12926235', 'SRR12926244', 'SRR12926246', 'SRR12926249', 'SRR12926251', 'SRR12926253', 'SRR12926264', 'SRR12926269', 'SRR12926271', 'SRR12926273', 'SRR12926275', 'SRR12926278', 'SRR12926283', 'SRR12926284', 'SRR12926289', 'SRR12926337', 'SRR12926339', 'SRR12926341', 'SRR12926343', 'SRR12926349', 'SRR12926351', 'SRR12926352', 'SRR12926354', 'SRR12926355', 'SRR12926361', 'SRR12926365')
+
+with_GPR65_variant <- tdf %>%
+  select(Time_point, LPS_TNF_alpha, LPS_IL_1b, 
+         LPS_IL_6, LPS_IL_10, Run) %>%
+  filter(Time_point == "acute")
+
+with_GPR65_variant <- with_GPR65_variant[with_GPR65_variant$Run %in% GPR65, ]
+
+without_GPR65_var <- tdf %>%
+  select(Time_point, LPS_TNF_alpha, LPS_IL_1b, 
+         LPS_IL_6, LPS_IL_10, Run) %>%
+  filter(Time_point == "acute")
+
+without_GPR65_var <- without_GPR65_var[!(without_GPR65_var$Run %in% GPR65), ]
+
+without_GPR65_var <- na.omit(without_GPR65_var)
+with_GPR65_variant <- na.omit(with_GPR65_variant)
+
+# converting to a ggplot:
+
+GPR65_data <- data.frame(
+  LPS_IL_10 = c(with_GPR65_variant$LPS_IL_10, without_GPR65_var$LPS_IL_10, 
+                cytokines_recovery$LPS_IL_10, cytokines_controls$LPS_IL_10),
+  Group = factor(rep(c("GPR65 edit", "acute","recovery","control"), 
+                     times = c(length(with_GPR65_variant$LPS_IL_10), length(without_GPR65_var$LPS_IL_10), 
+                               length(cytokines_recovery$LPS_IL_10), length(cytokines_controls$LPS_IL_10))))
+)
+
+ggplot(GPR65_data, aes(x = Group, y = (LPS_IL_10)/1000, fill = Group)) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(title = "IL-10 release with GPR65 edit",
+       x = "Group", y = "delta Il-10 (ng/mL)") +
+  theme_dark() +
+  scale_y_continuous(limits = c(0, 4)) +
+  theme(legend.position = 'none')
 
 # Perform Kruskal-Wallis test
 kruskal.test(LPS_IL_10 ~ Group, data = EIF2AK2_data)
@@ -2855,15 +3218,84 @@ TRAF3IP2_AS1 <- c('SRR12926216', 'SRR12926230', 'SRR12926244', 'SRR12926256',
                   'SRR12926337', 'SRR12926361')
 tdf$TRAF3IP2_AS1 <- ifelse(tdf$Run %in% TRAF3IP2_AS1, "TRAF3IP2_AS1", "no")
 
-# PPP6R3
+#adding DHCR24 gene variant samples
+DHCR24 <- c('SRR12926202', 'SRR12926204', 'SRR12926207', 'SRR12926208',
+            'SRR12926209', 'SRR12926212', 'SRR12926213', 'SRR12926214',
+            'SRR12926215', 'SRR12926216', 'SRR12926218', 'SRR12926220',
+            'SRR12926223', 'SRR12926224', 'SRR12926225', 'SRR12926226',
+            'SRR12926227', 'SRR12926229', 'SRR12926230', 'SRR12926232',
+            'SRR12926233', 'SRR12926234', 'SRR12926235', 'SRR12926236',
+            'SRR12926237', 'SRR12926239', 'SRR12926240', 'SRR12926242',
+            'SRR12926243', 'SRR12926244', 'SRR12926246', 'SRR12926247',
+            'SRR12926249', 'SRR12926250', 'SRR12926251', 'SRR12926253',
+            'SRR12926255', 'SRR12926256', 'SRR12926258', 'SRR12926262',
+            'SRR12926264', 'SRR12926266', 'SRR12926267', 'SRR12926268',
+            'SRR12926269', 'SRR12926271', 'SRR12926273', 'SRR12926275',
+            'SRR12926276', 'SRR12926277', 'SRR12926278', 'SRR12926280',
+            'SRR12926281', 'SRR12926282', 'SRR12926283', 'SRR12926284',
+            'SRR12926285', 'SRR12926287', 'SRR12926288', 'SRR12926289',
+            'SRR12926290', 'SRR12926291', 'SRR12926292', 'SRR12926294',
+            'SRR12926296', 'SRR12926298', 'SRR12926303', 'SRR12926305',
+            'SRR12926307', 'SRR12926312', 'SRR12926324', 'SRR12926325',
+            'SRR12926328', 'SRR12926335', 'SRR12926337', 'SRR12926338',
+            'SRR12926339', 'SRR12926340', 'SRR12926343', 'SRR12926347',
+            'SRR12926349', 'SRR12926351', 'SRR12926352', 'SRR12926354',
+            'SRR12926355', 'SRR12926357', 'SRR12926359', 'SRR12926360',
+            'SRR12926361', 'SRR12926362', 'SRR12926363', 'SRR12926365',
+            'SRR12926366')
+
+tdf$DHCR24 <- ifelse(tdf$Run %in% DHCR24, "DHCR24", "no")
+
+#adding CST7 gene variant samples
+CST7 <- c('SRR12926202', 'SRR12926207', 'SRR12926208', 'SRR12926209', 'SRR12926212', 'SRR12926214', 'SRR12926218', 'SRR12926220', 'SRR12926225', 'SRR12926229', 'SRR12926230', 'SRR12926234', 'SRR12926235', 'SRR12926239', 'SRR12926240', 'SRR12926242', 'SRR12926244', 'SRR12926249', 'SRR12926253', 'SRR12926256', 'SRR12926257', 'SRR12926258', 'SRR12926260', 'SRR12926262', 'SRR12926264', 'SRR12926266', 'SRR12926267', 'SRR12926269', 'SRR12926271', 'SRR12926273', 'SRR12926275', 'SRR12926276', 'SRR12926278', 'SRR12926281', 'SRR12926283', 'SRR12926285', 'SRR12926287', 'SRR12926291', 'SRR12926294', 'SRR12926316', 'SRR12926323', 'SRR12926335', 'SRR12926337', 'SRR12926339', 'SRR12926340', 'SRR12926341', 'SRR12926342', 'SRR12926343', 'SRR12926345', 'SRR12926347', 'SRR12926349', 'SRR12926351', 'SRR12926352', 'SRR12926353', 'SRR12926354', 'SRR12926355', 'SRR12926356', 'SRR12926357', 'SRR12926358', 'SRR12926359', 'SRR12926361', 'SRR12926363', 'SRR12926364', 'SRR12926365', 'SRR12926366')
+tdf$CST7 <- ifelse(tdf$Run %in% CST7, "CST7", "no")
+
+HLA_DOA <- c('SRR12926206', 'SRR12926213', 'SRR12926219', 'SRR12926221', 'SRR12926226', 'SRR12926232', 'SRR12926236', 'SRR12926238', 'SRR12926245', 'SRR12926247', 'SRR12926252', 'SRR12926257', 'SRR12926265', 'SRR12926268', 'SRR12926270', 'SRR12926272', 'SRR12926274', 'SRR12926279', 'SRR12926286', 'SRR12926298', 'SRR12926299', 'SRR12926301', 'SRR12926307', 'SRR12926309', 'SRR12926312', 'SRR12926314', 'SRR12926315', 'SRR12926316', 'SRR12926319', 'SRR12926320', 'SRR12926321', 'SRR12926323', 'SRR12926324', 'SRR12926327', 'SRR12926330', 'SRR12926333', 'SRR12926340', 'SRR12926344', 'SRR12926348', 'SRR12926353', 'SRR12926364')
+tdf$HLA_DOA <- ifelse(tdf$Run %in% HLA_DOA, "HLA_DOA", "no")
+
+PMF1<-c('SRR12926204', 'SRR12926206', 'SRR12926207', 'SRR12926208', 'SRR12926209', 'SRR12926210', 'SRR12926211', 'SRR12926212', 'SRR12926213', 'SRR12926214', 'SRR12926215', 'SRR12926216', 'SRR12926217', 'SRR12926218', 'SRR12926219', 'SRR12926222', 'SRR12926223', 'SRR12926225', 'SRR12926226', 'SRR12926227', 'SRR12926228', 'SRR12926229', 'SRR12926230', 'SRR12926231', 'SRR12926232', 'SRR12926233', 'SRR12926234', 'SRR12926238', 'SRR12926239', 'SRR12926240', 'SRR12926241', 'SRR12926242', 'SRR12926243', 'SRR12926244', 'SRR12926245', 'SRR12926246', 'SRR12926247', 'SRR12926248', 'SRR12926249', 'SRR12926250', 'SRR12926256', 'SRR12926257', 'SRR12926258', 'SRR12926259', 'SRR12926262', 'SRR12926263', 'SRR12926267', 'SRR12926268', 'SRR12926269', 'SRR12926270', 'SRR12926271', 'SRR12926272', 'SRR12926273', 'SRR12926274', 'SRR12926276', 'SRR12926277', 'SRR12926280', 'SRR12926283', 'SRR12926284', 'SRR12926287', 'SRR12926289', 'SRR12926290', 'SRR12926291', 'SRR12926292', 'SRR12926293', 'SRR12926294', 'SRR12926296', 'SRR12926298', 'SRR12926299', 'SRR12926302', 'SRR12926303', 'SRR12926307', 'SRR12926308', 'SRR12926309', 'SRR12926310', 'SRR12926311', 'SRR12926313', 'SRR12926314', 'SRR12926316', 'SRR12926317', 'SRR12926318', 'SRR12926320', 'SRR12926322', 'SRR12926323', 'SRR12926324', 'SRR12926325', 'SRR12926327', 'SRR12926328', 'SRR12926330', 'SRR12926333', 'SRR12926334', 'SRR12926335', 'SRR12926336', 'SRR12926343', 'SRR12926344', 'SRR12926345', 'SRR12926346', 'SRR12926352', 'SRR12926353', 'SRR12926355', 'SRR12926356', 'SRR12926359', 'SRR12926363', 'SRR12926364', 'SRR12926365', 'SRR12926367')
+tdf$PMF1 <- ifelse(tdf$Run %in% PMF1, "PMF1", "no")
+
+HLA_DQB1<-c('SRR12926206', 'SRR12926211', 'SRR12926215', 'SRR12926220', 'SRR12926221', 'SRR12926226', 'SRR12926233', 'SRR12926234', 'SRR12926244', 'SRR12926245', 'SRR12926248', 'SRR12926250', 'SRR12926269', 'SRR12926270', 'SRR12926271', 'SRR12926272', 'SRR12926277', 'SRR12926282', 'SRR12926284', 'SRR12926311', 'SRR12926313', 'SRR12926317', 'SRR12926361', 'SRR12926362', 'SRR12926367')
+tdf$HLA_DQB1 <- ifelse(tdf$Run %in% HLA_DQB1, "HLA_DQB1", "no")
+
+SLC26A2<-c('SRR12926203', 'SRR12926204', 'SRR12926207', 'SRR12926208', 'SRR12926211', 'SRR12926212', 'SRR12926214', 'SRR12926215', 'SRR12926216', 'SRR12926217', 'SRR12926218', 'SRR12926221', 'SRR12926224', 'SRR12926226', 'SRR12926227', 'SRR12926232', 'SRR12926233', 'SRR12926236', 'SRR12926237', 'SRR12926240', 'SRR12926244', 'SRR12926247', 'SRR12926248', 'SRR12926249', 'SRR12926253', 'SRR12926254', 'SRR12926255', 'SRR12926258', 'SRR12926266', 'SRR12926267', 'SRR12926273', 'SRR12926274', 'SRR12926275', 'SRR12926278', 'SRR12926281', 'SRR12926283', 'SRR12926285', 'SRR12926288', 'SRR12926291', 'SRR12926294', 'SRR12926298', 'SRR12926299', 'SRR12926303', 'SRR12926307', 'SRR12926308', 'SRR12926311', 'SRR12926312', 'SRR12926316', 'SRR12926321', 'SRR12926322', 'SRR12926326', 'SRR12926333', 'SRR12926338', 'SRR12926341', 'SRR12926342', 'SRR12926344', 'SRR12926346', 'SRR12926349', 'SRR12926356', 'SRR12926357', 'SRR12926358', 'SRR12926359', 'SRR12926360', 'SRR12926362', 'SRR12926364', 'SRR12926365')
+tdf$SLC26A2<- ifelse(tdf$Run %in% SLC26A2, "SLC26A2", "no")
+
+MAVS<-c('SRR12926202', 'SRR12926206', 'SRR12926238', 'SRR12926239', 'SRR12926251', 'SRR12926272', 'SRR12926273', 'SRR12926282', 'SRR12926283', 'SRR12926297', 'SRR12926337', 'SRR12926349', 'SRR12926354', 'SRR12926361')
+tdf$MAVS<- ifelse(tdf$Run %in% MAVS, "MAVS", "no")
+
+NSUN3<-c('SRR12926214', 'SRR12926215', 'SRR12926229', 'SRR12926255', 'SRR12926264', 'SRR12926290', 'SRR12926291', 'SRR12926352', 'SRR12926359')
+tdf$NSUN3<- ifelse(tdf$Run %in% NSUN3, "NSUN3", "no")
+
+SFT2D2<-c('SRR12926202', 'SRR12926204', 'SRR12926206', 'SRR12926214', 'SRR12926215', 'SRR12926220', 'SRR12926223', 'SRR12926224', 'SRR12926226', 'SRR12926227', 'SRR12926230', 'SRR12926234', 'SRR12926235', 'SRR12926238', 'SRR12926239', 'SRR12926240', 'SRR12926242', 'SRR12926243', 'SRR12926244', 'SRR12926251', 'SRR12926255', 'SRR12926256', 'SRR12926259', 'SRR12926260', 'SRR12926261', 'SRR12926262', 'SRR12926267', 'SRR12926268', 'SRR12926269', 'SRR12926271', 'SRR12926272', 'SRR12926273', 'SRR12926274', 'SRR12926275', 'SRR12926278', 'SRR12926279', 'SRR12926281', 'SRR12926284', 'SRR12926286', 'SRR12926287', 'SRR12926289', 'SRR12926291', 'SRR12926297', 'SRR12926299', 'SRR12926300', 'SRR12926304', 'SRR12926309', 'SRR12926311', 'SRR12926312', 'SRR12926315', 'SRR12926320', 'SRR12926325', 'SRR12926326', 'SRR12926332', 'SRR12926335', 'SRR12926337', 'SRR12926339', 'SRR12926343', 'SRR12926349', 'SRR12926351', 'SRR12926352', 'SRR12926355', 'SRR12926356', 'SRR12926357', 'SRR12926360', 'SRR12926364', 'SRR12926366', 'SRR12926367')
+tdf$SFT2D2<- ifelse(tdf$Run %in% SFT2D2, "SFT2D2", "no")
+
+GPR65<-c('SRR12926202', 'SRR12926209', 'SRR12926215', 'SRR12926220', 'SRR12926224', 'SRR12926225', 'SRR12926226', 'SRR12926230', 'SRR12926232', 'SRR12926235', 'SRR12926243', 'SRR12926244', 'SRR12926246', 'SRR12926247', 'SRR12926248', 'SRR12926249', 'SRR12926251', 'SRR12926253', 'SRR12926264', 'SRR12926269', 'SRR12926271', 'SRR12926272', 'SRR12926273', 'SRR12926275', 'SRR12926278', 'SRR12926283', 'SRR12926284', 'SRR12926286', 'SRR12926288', 'SRR12926289', 'SRR12926297', 'SRR12926300', 'SRR12926301', 'SRR12926304', 'SRR12926308', 'SRR12926310', 'SRR12926313', 'SRR12926337', 'SRR12926339', 'SRR12926340', 'SRR12926341', 'SRR12926343', 'SRR12926349', 'SRR12926350', 'SRR12926351', 'SRR12926352', 'SRR12926354', 'SRR12926355', 'SRR12926358', 'SRR12926361', 'SRR12926362', 'SRR12926364', 'SRR12926365')
+tdf$GPR65<- ifelse(tdf$Run %in% GPR65, "GPR65", "no")
+
+EIF2AK2<-c('SRR12926202', 'SRR12926233', 'SRR12926244', 'SRR12926251', 'SRR12926337', 'SRR12926339', 'SRR12926343', 'SRR12926351')
+tdf$EIF2AK2<- ifelse(tdf$Run %in% EIF2AK2, "EIF2AK2", "no")
+
+TTC9C<-c('SRR12926214', 'SRR12926215', 'SRR12926223', 'SRR12926226', 'SRR12926230', 'SRR12926235', 'SRR12926246', 'SRR12926248', 'SRR12926249', 'SRR12926255', 'SRR12926256', 'SRR12926258', 'SRR12926265', 'SRR12926266', 'SRR12926269', 'SRR12926270', 'SRR12926277', 'SRR12926278', 'SRR12926280', 'SRR12926284', 'SRR12926285', 'SRR12926294', 'SRR12926298', 'SRR12926321', 'SRR12926339', 'SRR12926349', 'SRR12926350', 'SRR12926351', 'SRR12926354', 'SRR12926358', 'SRR12926359', 'SRR12926361')
+tdf$TTC9C<- ifelse(tdf$Run %in% TTC9C, "TTC9C", "no")
+
+SYNJ1<-c('SRR12926209', 'SRR12926215', 'SRR12926220', 'SRR12926229', 'SRR12926230', 'SRR12926244', 'SRR12926246', 'SRR12926249', 'SRR12926260', 'SRR12926261', 'SRR12926264', 'SRR12926267', 'SRR12926269', 'SRR12926273', 'SRR12926275', 'SRR12926281', 'SRR12926282', 'SRR12926285', 'SRR12926290', 'SRR12926291', 'SRR12926309', 'SRR12926312', 'SRR12926323', 'SRR12926341', 'SRR12926342', 'SRR12926343', 'SRR12926349', 'SRR12926350', 'SRR12926351', 'SRR12926352', 'SRR12926354', 'SRR12926359', 'SRR12926361')
+tdf$SYNJ1<- ifelse(tdf$Run %in% SYNJ1, "SYNJ1", "no")
+
+ADAMTS2<-c('SRR12926202', 'SRR12926204', 'SRR12926208', 'SRR12926218', 'SRR12926224', 'SRR12926226', 'SRR12926230', 'SRR12926234', 'SRR12926235', 'SRR12926236', 'SRR12926237', 'SRR12926239', 'SRR12926242', 'SRR12926249', 'SRR12926256', 'SRR12926281', 'SRR12926283', 'SRR12926289', 'SRR12926337', 'SRR12926339', 'SRR12926343', 'SRR12926345', 'SRR12926349', 'SRR12926355', 'SRR12926361')
+tdf$ADAMTS2<- ifelse(tdf$Run %in% ADAMTS2, "ADAMTS2", "no")
+
+MAVS<-c('SRR12926202', 'SRR12926206', 'SRR12926238', 'SRR12926239', 'SRR12926251', 'SRR12926272', 'SRR12926273', 'SRR12926282', 'SRR12926283', 'SRR12926297', 'SRR12926337', 'SRR12926349', 'SRR12926354', 'SRR12926361')
+
 # Box plots of cytokines by group with coloured points of variant samples:
 ggplot(tdf, aes(x = Time_point, y = LPS_IL_10)) +
   geom_boxplot(outlier.shape = NA) +
-  geom_point(aes(color = PPP6R3), position = position_jitter(width = 0.1), size = 1) +
+  geom_point(aes(color = MAVS), position = position_jitter(width = 0.1), size = 1) +
   labs(title = "Boxplot of LPS_IL_10 by Group",
        x = "Group",
        y = "LPS_IL_10") +
-  scale_color_manual(values = c("PPP6R3" = "red", "no" = "black"))
+  scale_color_manual(values = c("MAVS" = "red", "no" = "black"))
 
 # TRAF3IP2_AS1
 # Box plots of cytokines by group with coloured points of variant samples:
@@ -2887,11 +3319,19 @@ ggplot(tdf, aes(x = Time_point, y = LPS_IL_10)) +
 
 ggplot(tdf, aes(x = Time_point, y = log2(LPS_IL_1b))) +
   geom_boxplot(outlier.shape = NA) +
-  geom_point(aes(color = ATP6AP1), position = position_jitter(width = 0.1), size = 1) +
+  geom_point(aes(color = ADAMTS2), position = position_jitter(width = 0.1), size = 1) +
   labs(title = "Boxplot of LPS_IL_1b by Group",
        x = "Group",
        y = "LPS_IL_1b") +
-  scale_color_manual(values = c("ATP6AP1" = "red", "no" = "black"))
+  scale_color_manual(values = c("ADAMTS2" = "red", "no" = "black"))
+
+ggplot(tdf, aes(x = Time_point, y = log2(LPS_IL_1b))) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(aes(color = SYNJ1), position = position_jitter(width = 0.1), size = 1) +
+  labs(title = "Boxplot of LPS_IL_1b by Group",
+       x = "Group",
+       y = "LPS_IL_1b") +
+  scale_color_manual(values = c("SYNJ1" = "red", "no" = "black"))
 
 ggplot(tdf, aes(x = Time_point, y = log2(LPS_TNF_alpha))) +
   geom_boxplot(outlier.shape = NA) +
@@ -3039,6 +3479,10 @@ tdf$ADGRE3_group <- ifelse(tdf$Time_point == "acute" & tdf$ADGRE3 == "ADGRE3", "
                            ifelse(tdf$Time_point == "acute" & tdf$ADGRE3 == "no", "Acute without edit",
                                   ifelse(tdf$Time_point == "control", "Controls", "Recovery")))
 
+tdf$ADAMTS2_group <- ifelse(tdf$Time_point == "acute" & tdf$ADAMTS2 == "ADAMTS2", "Acute with ADAMTS2 edit",
+                           ifelse(tdf$Time_point == "acute" & tdf$ADAMTS2 == "no", "Acute without edit",
+                                  ifelse(tdf$Time_point == "control", "Controls", "Recovery")))
+
 tdf_lastvariants_acute <- tdf %>% 
   filter(Time_point == "acute")
 
@@ -3084,6 +3528,7 @@ ggplot(tdf_lastvariants_acute, aes(x = HPSE_group, y = LPS_IL_1b, color = HPSE_g
 wilcox.test(acute_HPSE_cytokines$LPS_IL_1b, acute_no_HPSE_cytokines$LPS_IL_1b)
 dunn.test(tdf$LPS_IL_1b, tdf$HPSE_group, method = "bonferroni")
 
+
 # LILRA2 plots and statistical analysis
 ggplot(tdf_lastvariants_acute, aes(x = LILRA2_group, y = LPS_IL_10, color = LILRA2_group)) +
   geom_boxplot(outlier.shape = NA) +
@@ -3105,6 +3550,7 @@ acute_no_LILRA2_cytokines <- tdf %>%
 
 wilcox.test(acute_LILRA2_cytokines$LPS_IL_10,
             acute_no_LILRA2_cytokines$LPS_IL_10)
+
 
 # VHL plots and statistical analysis
 ggplot(tdf_lastvariants_acute, aes(x = VHL_group, y = LPS_IL_10, color = VHL_group)) +
@@ -3131,11 +3577,12 @@ ggplot(tdf_lastvariants_acute, aes(x = VHL_group, y = LPS_TNF_alpha, color = VHL
   guides(color = FALSE) +
   stat_summary(fun = median, geom = "text", aes(label = ..y..), vjust = -0.5)
 
-ggplot(tdf_lastvariants_acute, aes(x = VHL_group, y = LPS_IL_1b, color = VHL_group)) +
+# last one I hope:
+ggplot(tdf_lastvariants_acute, aes(x = ADAMTS2_group, y = LPS_IL_1b, color = ADAMTS2_group)) +
   geom_boxplot() +
-  labs(title = "Il-1b release across groups", y = "Il-1b", color = "VHL_group") +
+  labs(title = "Il-1b release across groups", y = "Il-1b", color = "ADAMTS2_group") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  coord_cartesian(ylim = c(-10000, 40000)) +
+  coord_cartesian(ylim = c(0, 20000)) +
   guides(color = FALSE) +
   stat_summary(fun = median, geom = "text", aes(label = ..y..), vjust = -0.5)
 
@@ -3327,6 +3774,16 @@ test_result <- oneway_test(combined ~ group, distribution = approximate(nresampl
 
 # Print the test result
 print(test_result)
+
+# adjusting p-values
+exonic_a_to_i_for_volcano_plot$Adjusted_P_Value <- p.adjust(exonic_a_to_i_for_volcano_plot$p_value_fisher,
+                                                            method = "BH")
+exonic_a_to_i_for_volcano_plot$Adjusted_P_Value_neglog <- -log10(exonic_a_to_i_for_volcano_plot$Adjusted_P_Value)
+output_volcanoatoiexonic <- "adjusted_p_atoi_exonic.csv"
+
+# Export tables as tab-delimited text files.
+write.table(exonic_a_to_i_for_volcano_plot, file = output_volcanoatoiexonic, sep = "\t", 
+            row.names = FALSE, quote = FALSE, col.names = TRUE)
 
 
 

@@ -1,8 +1,8 @@
 cytokine_data = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\masters-analysis\\Cytokine_release_data.txt"
 sample_list = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\VCFs\\srr_numbers.txt"
 
-occurs_in = "a000000000000000a00000000000000a0a00000000000000000000000000a000000000r000000000a00000000000000000000000000000000000000000000000000000000a0000000a000a00a000000a00000r"
-groups ='ar'
+occurs_in = "a0000a000ra00r00a0000r000000a0000a00r00000ara0r0000a000r0r000r0000r000r000000r00a0000a0a00000000000c000c000000000000000000000000c0c000000a0000ra0a00000r0000r00a0a0a0r"
+groups ='arc'
 
 # Getting list of SRR numbers
 srr_numbers = []
@@ -19,6 +19,7 @@ for digit in occurs_in:
         matching_samples.append(srr_numbers[counter])
     counter = counter + 1
 print(matching_samples)
+print(len(matching_samples))
 
 
 

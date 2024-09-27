@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 time_points = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\timepoints.txt"
-intersect_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\annovar_output\\intersect_ctou_ann.hg38_multianno.txt"
-output_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\annovar_output\\ctou_ann_stats_norm.csv"
+intersect_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\annovar_output\\intersect_atoi_strict_ann.hg38_multianno.txt"
+output_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\annovar_output\\atoi_ann_stats_strict.csv"
 
 
 # Getting list of time_points as a list of symbols: a, r, and r.
