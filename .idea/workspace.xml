@@ -5,13 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b866ebb6-641e-4a10-b43e-77eb626981a5" name="Changes" comment="Created a new script to count the number of edits in the intersect file that match the indexes files from the REDIportal database.">
-      <change afterPath="$PROJECT_DIR$/.idea/other.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/custom_utilities/RNA_edit_low_cytokine.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/other.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/other.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/1_srr_download_align.sh" beforeDir="false" afterPath="$PROJECT_DIR$/1_srr_download_align.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/3_variant_calling.sh" beforeDir="false" afterPath="$PROJECT_DIR$/3_variant_calling.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/6_intersect_processor2.py" beforeDir="false" afterPath="$PROJECT_DIR$/6_intersect_processor2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/7_thesis_rscript_strict.R" beforeDir="false" afterPath="$PROJECT_DIR$/7_thesis_rscript_strict.R" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/custom_utilities/SRR_finder.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/SRR_finder.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/custom_utilities/trials2.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Filters_explained.txt" beforeDir="false" afterPath="$PROJECT_DIR$/Filters_explained.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/custom_utilities/RNA_edit_low_cytokine.py" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/RNA_edit_low_cytokine.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/custom_utilities/density plots for variant filtering.R" beforeDir="false" afterPath="$PROJECT_DIR$/custom_utilities/density plots for variant filtering.R" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,6 +75,8 @@
       <workItem from="1727292118541" duration="128000" />
       <workItem from="1727418693174" duration="181000" />
       <workItem from="1727424373226" duration="242000" />
+      <workItem from="1730961140272" duration="8054000" />
+      <workItem from="1733948109885" duration="1131000" />
     </task>
     <task id="LOCAL-00001" summary="Created a new script to count the number of edits in the intersect file that match the indexes files from the REDIportal database.">
       <created>1726250966429</created>
@@ -99,6 +102,7 @@
     <SUITE FILE_PATH="coverage/6_intersect_processor2_py$SRR_finder.coverage" NAME="SRR_finder Coverage Results" MODIFIED="1727207310069" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/custom_utilities" />
     <SUITE FILE_PATH="coverage/6_intersect_processor2_py$match_strict_intersect_to_normal_annotated_csv.coverage" NAME="match_strict_intersect_to_normal_annotated_csv Coverage Results" MODIFIED="1726260147935" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/custom_utilities" />
     <SUITE FILE_PATH="coverage/6_intersect_processor2_py$RNA_edit_low_cytokine.coverage" NAME="RNA_edit_low_cytokine Coverage Results" MODIFIED="1727118549351" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/custom_utilities" />
+    <SUITE FILE_PATH="coverage/6_intersect_processor2_py$bacteria.coverage" NAME="bacteria Coverage Results" MODIFIED="1730972200517" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/custom_utilities" />
     <SUITE FILE_PATH="coverage/6_intersect_processor2_py$6_intersect_processor2.coverage" NAME="6_intersect_processor2 Coverage Results" MODIFIED="1726578208950" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

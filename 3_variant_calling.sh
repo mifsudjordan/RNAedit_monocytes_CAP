@@ -7,7 +7,10 @@ set -eu
 
 SECONDS=0
 
-ulimit -n 10000
+# ulimit -n 10000 # Sets the limit to open file descriptors
+                  # beyond the usual defaults of 1024 or 4096.
+                  # I hashed it out as it was probably overkill 
+                  # for this use case.
 
 # Program paths
 gatk="/home/mifsud_jordan/gatk-4.4.0.0/gatk"

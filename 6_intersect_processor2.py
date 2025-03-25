@@ -74,6 +74,3 @@ with open(output_file, "w") as output:
                 #Completing line to write
                 line_to_write = line_to_write + perc_a + perc_c + perc_r + '\n'
                 output.write(line_to_write)
-
-
-

@@ -2641,8 +2641,8 @@ autoplot(pca_ctou_cytokines, data = ctou_cytokines, colour = 'Time_point',
          alpha = 0.7, size = 2)
 
 # correlation between AtoI22 and ENSG00000160710 (ADAR gene)
-numeric_rna_edit_genes$AtoI_Ch22matches
-ggplot(numeric_rna_edit_genes, aes(x = ENSG00000160710, y = AtoI_Ch22matches)) +
+numeric_rna_edit_genes$AtoI_Chr22
+ggplot(numeric_rna_edit_genes, aes(x = ENSG00000160710, y = AtoI_Chr22)) +
   geom_point(aes(color = Time_point)) +  # Color points by Time_point
   geom_smooth(method = lm, se = FALSE, color = "black") +  # Add linear trend line
   labs(title = "Correlation between A to I Chr 22 and ADAR gene expression",

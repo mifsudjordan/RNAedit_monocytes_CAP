@@ -1,9 +1,13 @@
 #!/bin/bash
-set -eu
+set -eu # Script will halt upon encountering an error
+        # including undefined variables. 
 
 SECONDS=0
 
-ulimit -n 10000
+# ulimit -n 10000 # Sets the limit to open file descriptors
+                  # beyond the usual defaults of 1024 or 4096.
+                  # I hashed it out as it was probably overkill 
+                  # for this use case.
 
 # Program paths
 gatk="/home/mifsud_jordan/gatk-4.4.0.0/gatk"
@@ -29,10 +33,11 @@ $gatk --version
 # Initialize an array to store the SRR numbers
 declare -a srr_numbers
 
-# Read the SRR file line by line and saves each number in the array
-while IFS= read -r line; do
-    if [ -n "$line" ]; then
-        srr_numbers+=("$line")
+# Read the SRR file line by line and saves each number in the array.
+while IFS= read -r line; do # Reads the input file line by line preserving
+                            # whitespace and backslashes.
+    if [ -n "$line" ]; then # prevents blank lines from being added to array
+        srr_numbers+=("$line") 
     fi
 done < "srr_numbers.txt"
 
