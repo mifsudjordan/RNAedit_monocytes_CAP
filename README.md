@@ -9,6 +9,7 @@ This repository contains a set of scripts used for discovering RNA editing event
 - R
 - Required Python and R libraries (listed in individual scripts)
 - R studio
+- Other dependencies required by the individual scripts are listed below. 
 
 ## Pipeline Overview
 The pipeline consists of the following main steps:
@@ -140,6 +141,7 @@ For each SRR number in the array:
 Dependencies:
 - `gatk`
 - `check_REDI.py` (from the Custom Utilities directory)
+- Indexed REDIportal database edits separated by chromosomes. Get from https://1drv.ms/u/s!Avy_9ra593TljL8HHhUs6TP3gX0JBw?e=b5OVLm
 
 Note: The results file outputted by the script contains the counts of RNA edits for every sample.
 The file can be converted to a tab-delimited txt or csv file that can easily interpreted by an ETL tool such as Power Query.
