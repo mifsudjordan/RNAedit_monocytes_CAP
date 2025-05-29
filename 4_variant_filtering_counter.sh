@@ -31,6 +31,12 @@ for srr in "${srr_numbers[@]}"; do
 
     cd "$work_dir"
 
+    gatk SelectVariants \
+	-V haplo_out_"$srr".vcf \
+	-ids . \
+	-select-type SNP \
+	-O "$srr"_uncommon_snps.vcf
+
     # QC normal filtering
 #    $gatk VariantFiltration \
 #        -R "$ref" \
