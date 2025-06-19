@@ -5,7 +5,7 @@ intersect_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\annovar_output\\in
 output_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\annovar_output\\atoi_ann_stats_strict.csv"
 
 
-# Getting list of time_points as a list of symbols: a, r, and r.
+# Getting list of time_points as a list of symbols: a, r, and c.
 group = []
 with open(time_points, "r") as time_point_list:
     for line in time_point_list:

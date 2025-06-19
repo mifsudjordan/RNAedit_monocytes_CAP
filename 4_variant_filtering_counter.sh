@@ -88,7 +88,7 @@ for srr in "${srr_numbers[@]}"; do
     grep AC= "$srr"_AtoI_strict.vcf | wc -l >> $output
 
     # C to U
-    awk 'BEGIN {OFS="\t"} /^#/ {print; next} (($1 ~ /^[0-9XY]+$/) || ($1 == "MT")) && (($4 == "G" && $5 == "T") || ($4 == "C" && $5 == "A"))' "$srr"_uncommon_snps_passes_strict.vcf > "$srr"_CtoUstrict.vcf
+    awk 'BEGIN {OFS="\t"} /^#/ {print; next} ($4 == "C" && $5 == "T") || ($4 == "G" && $5 == "A")' "$srr"_uncommon_snps_passes_strict.vcf > "$srr"_CtoUstrict.vcf
     echo "No. of C to U:" >> $output
     grep AC= "$srr"_CtoUstrict.vcf | wc -l >> $output
 
