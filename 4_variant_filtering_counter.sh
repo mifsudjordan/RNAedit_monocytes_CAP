@@ -6,10 +6,11 @@ SECONDS=0
 # File paths
 
 ref="/mnt/c/Users/jorsm/OneDrive/masters_thesis/references_indexes/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa"
-vcf_path="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/all_cap_vcfs"
+vcf_path="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/all_cap_vcfs/"
 output="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/post_thesis_stats_$(date +'%Y-%m-%d').txt"
 gatk="/root/gatk-4.4.0.0/gatk"
 check_REDI="/mnt/c/Users/jorsm/OneDrive/masters_thesis/scripts/RNAedit_monocytes_CAP/custom_utilities/check_REDI.py"
+filenames_file="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/srr_numbers.txt"
 
 # Initialize an array to store the SRR numbers
 declare -a srr_numbers
@@ -22,15 +23,13 @@ while IFS= read -r line; do
     if [ -n "$line" ]; then
         srr_numbers+=("$line")
     fi
-done < "srr_numbers_hosp.txt"
+done < "$filenames_file"
+
+cd $vcf_path
 
 for srr in "${srr_numbers[@]}"; do
     echo $srr >> $output
     
-    work_dir=""$vcf_path""$srr""
-
-    cd "$work_dir"
-
     gatk SelectVariants \
 	-V haplo_out_"$srr".vcf \
 	-ids . \
@@ -95,6 +94,8 @@ for srr in "${srr_numbers[@]}"; do
     echo "Counting matching variants to REDI portal database for $srr"
 
     $check_REDI "$srr"_AtoI_strict.vcf >> $output
+
+    rm "$srr"_uncommon_snps.vcf, "$srr"_uncommonsnps_qc_strict.vcf, "$srr"_uncommon_snps_passes_strict.vcf, "$srr"_allRNAedits_strict.vcf, "$srr"_AtoI_strict.vcf, "$srr"_CtoUstrict.vcf
 
 done
     echo "-----------------------" >> $output
