@@ -6,10 +6,10 @@ SECONDS=0
 # File paths
 
 ref="/mnt/c/Users/jorsm/OneDrive/masters_thesis/references_indexes/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa"
-vcf_path="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/vcfs/hosp_admis/vcf_"
-output="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/vcfs/hosp_admis/variant_stats_acute_strict.txt"
+vcf_path="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/all_cap_vcfs"
+output="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/post_thesis_stats_$(date +'%Y-%m-%d').txt"
 gatk="/root/gatk-4.4.0.0/gatk"
-check_REDI="/mnt/c/Users/jorsm/OneDrive/masters_thesis/scripts/from_onedrive_folder/vcf_scripts/check_REDI.py"
+check_REDI="/mnt/c/Users/jorsm/OneDrive/masters_thesis/scripts/RNAedit_monocytes_CAP/custom_utilities/check_REDI.py"
 
 # Initialize an array to store the SRR numbers
 declare -a srr_numbers
@@ -76,7 +76,7 @@ for srr in "${srr_numbers[@]}"; do
     echo "Selecting variants matching RNA editing types..."
 
     # A to I || C to U
-    awk 'BEGIN {OFS="\t"} /^#/ {print; next} ($4 == "G" && $5 == "T") || ($4 == "C" && $5 == "A") || ($4 == "A" && $5 == "G") || ($4 == "T" && $5 == "C")' "$srr"_uncommon_snps_passes_strict.vcf > "$srr"_allRNAedits_strict.vcf
+    awk 'BEGIN {OFS="\t"} /^#/ {print; next} ($4 == "G" && $5 == "A") || ($4 == "C" && $5 == "T") || ($4 == "A" && $5 == "G") || ($4 == "T" && $5 == "C")' "$srr"_uncommon_snps_passes_strict.vcf > "$srr"_allRNAedits_strict.vcf
 
     echo "No. of A to I || C to U" >> $output
     grep AC= "$srr"_allRNAedits_strict.vcf | wc -l >> $output
