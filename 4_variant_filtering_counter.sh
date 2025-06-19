@@ -9,7 +9,7 @@ ref="/mnt/c/Users/jorsm/OneDrive/masters_thesis/references_indexes/Homo_sapiens.
 vcf_path="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/all_cap_vcfs/"
 output="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/post_thesis_stats_$(date +'%Y-%m-%d').txt"
 gatk="/root/gatk-4.4.0.0/gatk"
-check_REDI="/mnt/c/Users/jorsm/OneDrive/masters_thesis/scripts/RNAedit_monocytes_CAP/custom_utilities/check_REDI.py"
+check_REDI="/mnt/c/Users/jorsm/OneDrive/RSO/reads_scripts/RNA_edit_detection/check_REDI_reads.py"
 filenames_file="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/srr_numbers.txt"
 
 # Initialize an array to store the SRR numbers
