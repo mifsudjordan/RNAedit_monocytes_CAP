@@ -7,7 +7,7 @@ SECONDS=0
 
 ref="/mnt/c/Users/jorsm/OneDrive/masters_thesis/references_indexes/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa"
 vcf_path="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/all_cap_vcfs/"
-output="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/post_thesis_stats_$(date +'%Y-%m-%d').txt"
+output="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/post_thesis_stats_$(date +'%Y-%m-%d_%H-%M-%S').txt"
 gatk="/root/gatk-4.4.0.0/gatk"
 check_REDI="/mnt/c/Users/jorsm/OneDrive/RSO/reads_scripts/RNA_edit_detection/check_REDI_reads.py"
 filenames_file="/mnt/c/Users/jorsm/OneDrive/masters_thesis/VCFs/srr_numbers.txt"
@@ -87,15 +87,16 @@ for srr in "${srr_numbers[@]}"; do
     grep AC= "$srr"_AtoI_strict.vcf | wc -l >> $output
 
     # C to U
-    awk 'BEGIN {OFS="\t"} /^#/ {print; next} ($4 == "C" && $5 == "T") || ($4 == "G" && $5 == "A")' "$srr"_uncommon_snps_passes_strict.vcf > "$srr"_CtoUstrict.vcf
+    awk 'BEGIN {OFS="\t"} /^#/ {print; next} ($4 == "C" && $5 == "T") || ($4 == "G" && $5 == "A")' "$srr"_uncommon_snps_passes_strict.vcf > "$srr"_CtoU_strict.vcf
     echo "No. of C to U:" >> $output
-    grep AC= "$srr"_CtoUstrict.vcf | wc -l >> $output
+    grep AC= "$srr"_CtoU_strict.vcf | wc -l >> $output
 
     echo "Counting matching variants to REDI portal database for $srr"
 
     $check_REDI "$srr"_AtoI_strict.vcf >> $output
 
-    rm "$srr"_uncommon_snps.vcf, "$srr"_uncommonsnps_qc_strict.vcf, "$srr"_uncommon_snps_passes_strict.vcf, "$srr"_allRNAedits_strict.vcf, "$srr"_AtoI_strict.vcf, "$srr"_CtoUstrict.vcf
+    # the following line is not working yet
+    #rm "$srr"_uncommon_snps.vcf, "$srr"_uncommonsnps_qc_strict.vcf, "$srr"_uncommon_snps_passes_strict.vcf, "$srr"_allRNAedits_strict.vcf, "$srr"_AtoI_strict.vcf, "$srr"_CtoU_strict.vcf
 
 done
     echo "-----------------------" >> $output

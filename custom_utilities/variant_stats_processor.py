@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-stats_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\VCFs\\vcfs\\recovery\\variant_stats_recovery_strict.txt"
-output_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\VCFs\\vcfs\\recovery\\variant_stats_recovery_strict.csv"
+stats_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\VCFs\\post_thesis_stats_2025-06-20_10-03-20.txt"
+output_file = "C:\\Users\\jorsm\\OneDrive\\masters_thesis\\VCFs\\CAP_edit_counts_post_masters.csv"
 
 headers_to_write = "Run\tuncommon_snps_qc\tAtoIandCtoU\tAtoI\tCtoU\tAtoI_Ch1matches\tAtoI_Ch10matches\t \\" \
                    "AtoI_Ch11matches\tAtoI_Ch12matches\tAtoI_Ch13matches\t \\" \
